@@ -4,27 +4,21 @@ import { Heartbeat } from "@/components/heartbeat";
 import { LogoutButton } from "@/components/logout-button";
 
 const cards = [
-<<<<<<< HEAD
-  { title: "Spiele", description: "Hier findest du bald kleine Lern- und Fun-Games." },
-  { title: "Info-Seiten", description: "Wichtige Hinweise, Termine und Dokumente." },
-  { title: "Mathe-Rechner", description: "Nützliche Rechentools als Platzhalterbereich." }
-=======
   {
     title: "Spiele",
     description: "Hier findest du bald kleine Lern- und Fun-Games.",
-    href: "/app/spiele"
+    href: "/app/spiele",
   },
   {
     title: "Info-Seiten",
     description: "Wichtige Hinweise, Termine und Dokumente.",
-    href: "/app/info"
+    href: "/app/info",
   },
   {
     title: "Mathe-Rechner",
     description: "Nützliche Rechentools als Platzhalterbereich.",
-    href: "/app/rechner"
-  }
->>>>>>> codex-new
+    href: "/app/rechner",
+  },
 ];
 
 export default async function AppPage() {
@@ -37,11 +31,19 @@ export default async function AppPage() {
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm text-slate-300">Eingeloggt als</p>
-            <h1 className="text-3xl font-bold">Hallo, {session?.user?.name ?? "Nutzer"}</h1>
+            <h1 className="text-3xl font-bold">
+              Hallo, {session?.user?.name ?? "Nutzer"}
+            </h1>
           </div>
+
           <div className="flex items-center gap-3">
             {session?.user?.role === "ADMIN" ? (
-              <Link href="/admin" className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white">Admin-Dashboard</Link>
+              <Link
+                href="/admin"
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white"
+              >
+                Admin-Dashboard
+              </Link>
             ) : null}
             <LogoutButton />
           </div>
@@ -49,17 +51,12 @@ export default async function AppPage() {
 
         <section className="grid gap-4 md:grid-cols-3">
           {cards.map((card) => (
-<<<<<<< HEAD
-            <article key={card.title} className="rounded-xl border border-slate-700 bg-card p-5">
-              <h2 className="mb-2 text-xl font-semibold">{card.title}</h2>
-              <p className="text-sm text-slate-300">{card.description}</p>
-            </article>
-=======
-            <Link key={card.title} href={card.href} className="rounded-xl border border-slate-700 bg-card p-5 transition hover:border-accent">
-              <h2 className="mb-2 text-xl font-semibold">{card.title}</h2>
-              <p className="text-sm text-slate-300">{card.description}</p>
+            <Link key={card.title} href={card.href}>
+              <article className="rounded-xl border border-slate-700 bg-card p-5 transition hover:border-accent">
+                <h2 className="mb-2 text-xl font-semibold">{card.title}</h2>
+                <p className="text-sm text-slate-300">{card.description}</p>
+              </article>
             </Link>
->>>>>>> codex-new
           ))}
         </section>
       </div>
