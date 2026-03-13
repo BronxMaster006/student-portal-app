@@ -1,7 +1,7 @@
 "use server";
 
-import { AuthError } from "next-auth";
 import { signIn } from "@/lib/auth";
+import { AuthError } from "next-auth";
 
 export type LoginState = { error?: string };
 
@@ -13,13 +13,21 @@ export async function loginAction(_: LoginState, formData: FormData): Promise<Lo
     await signIn("credentials", {
       firstName,
       password,
-      redirectTo: "/app"
+      redirectTo: "/app",
     });
+
     return {};
-  } catch (error) {
+  } catch (error: any) {
+
+    // WICHTIG: Redirect Fehler durchlassen
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+
     if (error instanceof AuthError) {
       return { error: "Anmeldung fehlgeschlagen. Bitte Daten prüfen." };
     }
+
     return { error: "Unbekannter Fehler bei der Anmeldung." };
   }
 }
