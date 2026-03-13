@@ -1,7 +1,12 @@
 "use server";
 
+<<<<<<< HEAD
 import { signIn } from "@/lib/auth";
 import { AuthError } from "next-auth";
+=======
+import { AuthError } from "next-auth";
+import { signIn } from "@/lib/auth";
+>>>>>>> codex-new
 
 export type LoginState = { error?: string };
 
@@ -13,6 +18,7 @@ export async function loginAction(_: LoginState, formData: FormData): Promise<Lo
     await signIn("credentials", {
       firstName,
       password,
+<<<<<<< HEAD
       redirectTo: "/app",
     });
 
@@ -31,3 +37,15 @@ export async function loginAction(_: LoginState, formData: FormData): Promise<Lo
     return { error: "Unbekannter Fehler bei der Anmeldung." };
   }
 }
+=======
+      redirectTo: "/app"
+    });
+    return {};
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { error: "Anmeldung fehlgeschlagen. Bitte Daten prüfen." };
+    }
+    return { error: "Unbekannter Fehler bei der Anmeldung." };
+  }
+}
+>>>>>>> codex-new

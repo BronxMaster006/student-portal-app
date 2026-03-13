@@ -36,6 +36,21 @@ model User {
   infoPosts    InfoPost[]
 }
 
+<<<<<<< HEAD
+=======
+model InfoPost {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
+>>>>>>> codex-new
 model ActivityLog {
   id        String       @id @default(cuid())
   userId    String
@@ -48,6 +63,7 @@ model ActivityLog {
 }
 
 model ErrorLog {
+<<<<<<< HEAD
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -68,3 +84,14 @@ model InfoPost {
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
 }
+=======
+  id        String    @id @default(cuid())
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  route     String?
+  message   String
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+}
+>>>>>>> codex-new

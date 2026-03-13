@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import Link from "next/link";
+>>>>>>> codex-new
 import { ActivityType } from "@prisma/client";
 import { Heartbeat } from "@/components/heartbeat";
 import { LogoutButton } from "@/components/logout-button";
@@ -32,9 +36,18 @@ export default async function AdminPage() {
     <main className="min-h-screen px-6 py-10">
       <Heartbeat />
       <div className="mx-auto max-w-6xl space-y-6">
+<<<<<<< HEAD
         <header className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Admin-Dashboard</h1>
           <LogoutButton />
+=======
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl font-bold">Admin-Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <Link href="/admin/info" className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white">Info erstellen</Link>
+            <LogoutButton />
+          </div>
+>>>>>>> codex-new
         </header>
 
         <section className="rounded-xl border border-slate-700 bg-card p-5">

@@ -4,9 +4,27 @@ import { Heartbeat } from "@/components/heartbeat";
 import { LogoutButton } from "@/components/logout-button";
 
 const cards = [
+<<<<<<< HEAD
   { title: "Spiele", description: "Hier findest du bald kleine Lern- und Fun-Games." },
   { title: "Info-Seiten", description: "Wichtige Hinweise, Termine und Dokumente." },
   { title: "Mathe-Rechner", description: "Nützliche Rechentools als Platzhalterbereich." }
+=======
+  {
+    title: "Spiele",
+    description: "Hier findest du bald kleine Lern- und Fun-Games.",
+    href: "/app/spiele"
+  },
+  {
+    title: "Info-Seiten",
+    description: "Wichtige Hinweise, Termine und Dokumente.",
+    href: "/app/info"
+  },
+  {
+    title: "Mathe-Rechner",
+    description: "Nützliche Rechentools als Platzhalterbereich.",
+    href: "/app/rechner"
+  }
+>>>>>>> codex-new
 ];
 
 export default async function AppPage() {
@@ -31,10 +49,17 @@ export default async function AppPage() {
 
         <section className="grid gap-4 md:grid-cols-3">
           {cards.map((card) => (
+<<<<<<< HEAD
             <article key={card.title} className="rounded-xl border border-slate-700 bg-card p-5">
               <h2 className="mb-2 text-xl font-semibold">{card.title}</h2>
               <p className="text-sm text-slate-300">{card.description}</p>
             </article>
+=======
+            <Link key={card.title} href={card.href} className="rounded-xl border border-slate-700 bg-card p-5 transition hover:border-accent">
+              <h2 className="mb-2 text-xl font-semibold">{card.title}</h2>
+              <p className="text-sm text-slate-300">{card.description}</p>
+            </Link>
+>>>>>>> codex-new
           ))}
         </section>
       </div>
