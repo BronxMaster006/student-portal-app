@@ -581,11 +581,15 @@ export function ChessV1Game() {
                 key={`${row}-${col}`}
                 type="button"
                 onClick={() => handleSquareClick(row, col)}
-                className={`relative aspect-square border text-2xl sm:text-3xl ${
-                  isDark ? "border-slate-700 bg-slate-700/70" : "border-slate-700 bg-slate-200 text-slate-900"
+                className={`relative aspect-square border text-4xl sm:text-5xl flex items-center justify-center ${
+                 isDark ? "border-slate-700 bg-slate-700/70" : "border-slate-700 bg-slate-200 text-slate-900"
                 } ${isSelected ? "outline outline-2 outline-accent" : ""}`}
               >
-                {piece ? pieceSymbol(piece) : ""}
+                {piece ? (
+                  <span className={piece.color === "w" ? "text-sky-300 drop-shadow" : "text-rose-400 drop-shadow"}>
+                    {pieceSymbol(piece)}
+                   </span>
+                ) : ""}
                 {isLegal ? <span className="pointer-events-none absolute inset-0 m-auto h-3 w-3 rounded-full bg-accent/80" /> : null}
               </button>
             );
