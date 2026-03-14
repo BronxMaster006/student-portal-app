@@ -31,9 +31,15 @@ type MinesweeperDifficulty = {
   mines: number;
 };
 
+type UltimateHistory = {
+  xWins: number;
+  oWins: number;
+  draws: number;
+};
+
 const gameTabs: { key: GameKey; label: string; description: string }[] = [
   { key: "tictactoe", label: "Tic-Tac-Toe", description: "2 Spieler lokal auf einem Gerät" },
-  { key: "snake", label: "Snake", description: "Pfeiltasten oder Touch-Steuerung" },
+  { key: "snake", label: "Snake", description: "Pfeiltasten, Touch oder Swipe" },
   { key: "minesweeper", label: "Minesweeper", description: "Mit Schwierigkeitsstufen" },
   { key: "ultimate", label: "Ultimate Tic-Tac-Toe", description: "9 Felder mit Ziel-Feld-Regel" }
 ];
@@ -41,11 +47,19 @@ const gameTabs: { key: GameKey; label: string; description: string }[] = [
 const snakeBoardSize = 14;
 const snakeTickMs = 180;
 const snakeBestScoreStorageKey = "student-portal-snake-bestscore";
+const ultimateHistoryStorageKey = "student-portal-ultimate-history";
+const mineLongPressMs = 450;
 
 const minesweeperDifficulties: Record<MinesweeperDifficultyKey, MinesweeperDifficulty> = {
   leicht: { label: "Leicht", size: 8, mines: 10 },
   mittel: { label: "Mittel", size: 12, mines: 24 },
   schwer: { label: "Schwer", size: 16, mines: 45 }
+};
+
+const initialUltimateHistory: UltimateHistory = {
+  xWins: 0,
+  oWins: 0,
+  draws: 0
 };
 
 function getWinner(board: CellValue[]): CellValue {
@@ -150,6 +164,7 @@ function createEmptyUltimateWinners(): SmallBoardResult[] {
 
 export default function SpielePage() {
   const [activeGame, setActiveGame] = useState<GameKey>("tictactoe");
+  const [showEasterEgg, setShowEasterEgg] = useState(false);
 
   const [tttBoard, setTttBoard] = useState<CellValue[]>(Array(9).fill(null));
   const [tttTurn, setTttTurn] = useState<"X" | "O">("X");
@@ -169,6 +184,7 @@ export default function SpielePage() {
   const snakeDirectionRef = useRef<Direction>("right");
   const snakeQueuedDirectionRef = useRef<Direction>("right");
   const snakeInputLockedRef = useRef(false);
+  const snakeSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const [mineDifficulty, setMineDifficulty] = useState<MinesweeperDifficultyKey>("leicht");
   const [mineBoard, setMineBoard] = useState<MinesweeperCell[][]>(() =>
@@ -177,11 +193,17 @@ export default function SpielePage() {
   const [mineGameOver, setMineGameOver] = useState(false);
   const [mineWon, setMineWon] = useState(false);
   const [mineFirstClickDone, setMineFirstClickDone] = useState(false);
+  const [mineTouchFlagMode, setMineTouchFlagMode] = useState(false);
+  const mineLongPressTimerRef = useRef<number | null>(null);
+  const mineLongPressTriggeredRef = useRef(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   const [utttBoards, setUtttBoards] = useState<CellValue[][]>(() => createEmptyUltimateBoards());
   const [utttSmallWinners, setUtttSmallWinners] = useState<SmallBoardResult[]>(() => createEmptyUltimateWinners());
   const [utttTurn, setUtttTurn] = useState<"X" | "O">("X");
   const [utttTargetBoard, setUtttTargetBoard] = useState<number | null>(null);
+  const [ultimateHistory, setUltimateHistory] = useState<UltimateHistory>(initialUltimateHistory);
+  const [ultimateFinished, setUltimateFinished] = useState(false);
 
   const currentMineSettings = minesweeperDifficulties[mineDifficulty];
 
@@ -201,6 +223,13 @@ export default function SpielePage() {
     () => !ultimateWinner && utttSmallWinners.every((result) => result !== null),
     [ultimateWinner, utttSmallWinners]
   );
+
+  const clearMineLongPress = useCallback(() => {
+    if (mineLongPressTimerRef.current !== null) {
+      window.clearTimeout(mineLongPressTimerRef.current);
+      mineLongPressTimerRef.current = null;
+    }
+  }, []);
 
   function resetTicTacToe() {
     setTttBoard(Array(9).fill(null));
@@ -258,6 +287,42 @@ export default function SpielePage() {
     }
   }, [snakeGameOver, snakeRunning]);
 
+  const handleSnakeSwipeStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+    snakeSwipeStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }, []);
+
+  const handleSnakeSwipeMove = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    const start = snakeSwipeStartRef.current;
+    const touch = event.touches[0];
+    if (!start || !touch) {
+      return;
+    }
+
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    const threshold = 24;
+
+    if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) {
+      return;
+    }
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      queueSnakeDirection(dx > 0 ? "right" : "left");
+    } else {
+      queueSnakeDirection(dy > 0 ? "down" : "up");
+    }
+
+    snakeSwipeStartRef.current = null;
+  }, [queueSnakeDirection]);
+
+  const handleSnakeSwipeEnd = useCallback(() => {
+    snakeSwipeStartRef.current = null;
+  }, []);
+
   function resetSnake() {
     const initialSnake = [
       { x: 6, y: 7 },
@@ -272,118 +337,117 @@ export default function SpielePage() {
     snakeDirectionRef.current = "right";
     snakeQueuedDirectionRef.current = "right";
     snakeInputLockedRef.current = false;
+    snakeSwipeStartRef.current = null;
   }
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
+  function toggleMineFlag(row: number, col: number) {
+    if (mineGameOver || mineWon) {
       return;
     }
 
-    const stored = window.localStorage.getItem(snakeBestScoreStorageKey);
-    if (!stored) {
+    setMineBoard((previous) => {
+      const next = previous.map((line) => line.map((cell) => ({ ...cell })));
+      const cell = next[row][col];
+      if (cell.isOpen) {
+        return previous;
+      }
+      cell.isFlagged = !cell.isFlagged;
+      return next;
+    });
+  }
+
+  function openMinesweeperCell(row: number, col: number) {
+    if (mineGameOver || mineWon) {
       return;
     }
 
-    const parsed = Number.parseInt(stored, 10);
-    if (!Number.isNaN(parsed) && parsed >= 0) {
-      setSnakeBestScore(parsed);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (snakeScore > snakeBestScore) {
-      setSnakeBestScore(snakeScore);
-    }
-  }, [snakeBestScore, snakeScore]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.localStorage.setItem(snakeBestScoreStorageKey, String(snakeBestScore));
-  }, [snakeBestScore]);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (activeGame !== "snake") {
-        return;
+    setMineBoard((previous) => {
+      const currentCell = previous[row][col];
+      if (currentCell.isOpen || currentCell.isFlagged) {
+        return previous;
       }
 
-      if (event.repeat) {
-        return;
+      let next = previous.map((line) => line.map((cell) => ({ ...cell })));
+
+      if (!mineFirstClickDone) {
+        const safeIndex = row * currentMineSettings.size + col;
+        next = createMinesweeperBoard(currentMineSettings.size, currentMineSettings.mines, safeIndex);
+        setMineFirstClickDone(true);
       }
 
-      const keyMap: Record<string, Direction | undefined> = {
-        ArrowUp: "up",
-        ArrowDown: "down",
-        ArrowLeft: "left",
-        ArrowRight: "right"
-      };
+      const cell = next[row][col];
 
-      const nextDirection = keyMap[event.key];
-      if (!nextDirection) {
-        return;
-      }
-
-      event.preventDefault();
-      queueSnakeDirection(nextDirection);
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeGame, queueSnakeDirection]);
-
-  useEffect(() => {
-    if (!snakeRunning || snakeGameOver) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setSnake((previous) => {
-        snakeInputLockedRef.current = false;
-        const direction = snakeQueuedDirectionRef.current;
-        snakeDirectionRef.current = direction;
-        const head = previous[0];
-
-        const delta: Record<Direction, SnakePoint> = {
-          up: { x: 0, y: -1 },
-          down: { x: 0, y: 1 },
-          left: { x: -1, y: 0 },
-          right: { x: 1, y: 0 }
-        };
-
-        const nextHead = {
-          x: head.x + delta[direction].x,
-          y: head.y + delta[direction].y
-        };
-
-        const wallHit = nextHead.x < 0 || nextHead.y < 0 || nextHead.x >= snakeBoardSize || nextHead.y >= snakeBoardSize;
-        const selfHit = previous.some((segment) => segment.x === nextHead.x && segment.y === nextHead.y);
-
-        if (wallHit || selfHit) {
-          setSnakeGameOver(true);
-          setSnakeRunning(false);
-          snakeInputLockedRef.current = false;
-          return previous;
+      if (cell.isMine) {
+        for (const boardRow of next) {
+          for (const boardCell of boardRow) {
+            if (boardCell.isMine) {
+              boardCell.isOpen = true;
+            }
+          }
         }
+        setMineGameOver(true);
+        return next;
+      }
 
-        const ateFood = nextHead.x === snakeFood.x && nextHead.y === snakeFood.y;
-        const nextSnake = [nextHead, ...previous];
+      revealMineCell(next, row, col);
 
-        if (!ateFood) {
-          nextSnake.pop();
-        } else {
-          setSnakeScore((score) => score + 1);
-          setSnakeFood(randomFreeCell(nextSnake));
-        }
+      if (checkMinesweeperWin(next)) {
+        setMineWon(true);
+      }
 
-        return nextSnake;
-      });
-    }, snakeTickMs);
+      return next;
+    });
+  }
 
-    return () => clearInterval(interval);
-  }, [snakeFood, snakeGameOver, snakeRunning]);
+  function handleMineCellClick(row: number, col: number) {
+    if (mineLongPressTriggeredRef.current) {
+      mineLongPressTriggeredRef.current = false;
+      return;
+    }
+
+    if (mineTouchFlagMode) {
+      toggleMineFlag(row, col);
+      return;
+    }
+
+    openMinesweeperCell(row, col);
+  }
+
+  function handleMineTouchStart(row: number, col: number) {
+    if (!isTouchDevice || mineTouchFlagMode) {
+      return;
+    }
+
+    mineLongPressTriggeredRef.current = false;
+    clearMineLongPress();
+
+    mineLongPressTimerRef.current = window.setTimeout(() => {
+      toggleMineFlag(row, col);
+      mineLongPressTriggeredRef.current = true;
+      mineLongPressTimerRef.current = null;
+    }, mineLongPressMs);
+  }
+
+  function handleMineTouchEnd() {
+    clearMineLongPress();
+  }
+
+  function handleMineContextMenu(event: React.MouseEvent, row: number, col: number) {
+    event.preventDefault();
+    toggleMineFlag(row, col);
+  }
+
+  function resetMinesweeper(nextDifficulty?: MinesweeperDifficultyKey) {
+    const difficulty = nextDifficulty ?? mineDifficulty;
+    const settings = minesweeperDifficulties[difficulty];
+    setMineDifficulty(difficulty);
+    setMineBoard(createMinesweeperBoard(settings.size, settings.mines));
+    setMineGameOver(false);
+    setMineWon(false);
+    setMineFirstClickDone(false);
+    clearMineLongPress();
+    mineLongPressTriggeredRef.current = false;
+  }
 
   function revealMineCell(board: MinesweeperCell[][], row: number, col: number) {
     const queue: Array<{ row: number; col: number }> = [{ row, col }];
@@ -433,82 +497,12 @@ export default function SpielePage() {
     return true;
   }
 
-  function resetMinesweeper(nextDifficulty?: MinesweeperDifficultyKey) {
-    const difficulty = nextDifficulty ?? mineDifficulty;
-    const settings = minesweeperDifficulties[difficulty];
-    setMineDifficulty(difficulty);
-    setMineBoard(createMinesweeperBoard(settings.size, settings.mines));
-    setMineGameOver(false);
-    setMineWon(false);
-    setMineFirstClickDone(false);
-  }
-
-  function openMinesweeperCell(row: number, col: number) {
-    if (mineGameOver || mineWon) {
-      return;
-    }
-
-    setMineBoard((previous) => {
-      const currentCell = previous[row][col];
-      if (currentCell.isOpen || currentCell.isFlagged) {
-        return previous;
-      }
-
-      let next = previous.map((line) => line.map((cell) => ({ ...cell })));
-
-      if (!mineFirstClickDone) {
-        const safeIndex = row * currentMineSettings.size + col;
-        next = createMinesweeperBoard(currentMineSettings.size, currentMineSettings.mines, safeIndex);
-        setMineFirstClickDone(true);
-      }
-
-      const cell = next[row][col];
-
-      if (cell.isMine) {
-        for (const boardRow of next) {
-          for (const boardCell of boardRow) {
-            if (boardCell.isMine) {
-              boardCell.isOpen = true;
-            }
-          }
-        }
-        setMineGameOver(true);
-        return next;
-      }
-
-      revealMineCell(next, row, col);
-
-      if (checkMinesweeperWin(next)) {
-        setMineWon(true);
-      }
-
-      return next;
-    });
-  }
-
-  function toggleMineFlag(event: React.MouseEvent, row: number, col: number) {
-    event.preventDefault();
-
-    if (mineGameOver || mineWon) {
-      return;
-    }
-
-    setMineBoard((previous) => {
-      const next = previous.map((line) => line.map((cell) => ({ ...cell })));
-      const cell = next[row][col];
-      if (cell.isOpen) {
-        return previous;
-      }
-      cell.isFlagged = !cell.isFlagged;
-      return next;
-    });
-  }
-
   function resetUltimateTicTacToe() {
     setUtttBoards(createEmptyUltimateBoards());
     setUtttSmallWinners(createEmptyUltimateWinners());
     setUtttTurn("X");
     setUtttTargetBoard(null);
+    setUltimateFinished(false);
   }
 
   function playUltimateCell(boardIndex: number, cellIndex: number) {
@@ -553,13 +547,222 @@ export default function SpielePage() {
 
   const ultimateForcedBoardStillOpen = utttTargetBoard !== null && utttSmallWinners[utttTargetBoard] === null;
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const touch = window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+    setIsTouchDevice(touch);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const stored = window.localStorage.getItem(snakeBestScoreStorageKey);
+    if (!stored) {
+      return;
+    }
+
+    const parsed = Number.parseInt(stored, 10);
+    if (!Number.isNaN(parsed) && parsed >= 0) {
+      setSnakeBestScore(parsed);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (snakeScore > snakeBestScore) {
+      setSnakeBestScore(snakeScore);
+    }
+  }, [snakeBestScore, snakeScore]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(snakeBestScoreStorageKey, String(snakeBestScore));
+  }, [snakeBestScore]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const stored = window.localStorage.getItem(ultimateHistoryStorageKey);
+    if (!stored) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(stored) as Partial<UltimateHistory>;
+      if (
+        typeof parsed.xWins === "number" &&
+        typeof parsed.oWins === "number" &&
+        typeof parsed.draws === "number"
+      ) {
+        setUltimateHistory({
+          xWins: parsed.xWins,
+          oWins: parsed.oWins,
+          draws: parsed.draws
+        });
+      }
+    } catch {
+      // intentionally ignore broken history values
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(ultimateHistoryStorageKey, JSON.stringify(ultimateHistory));
+  }, [ultimateHistory]);
+
+  useEffect(() => {
+    if (ultimateFinished) {
+      return;
+    }
+
+    if (ultimateWinner) {
+      setUltimateHistory((previous) => ({
+        ...previous,
+        xWins: previous.xWins + (ultimateWinner === "X" ? 1 : 0),
+        oWins: previous.oWins + (ultimateWinner === "O" ? 1 : 0)
+      }));
+      setUltimateFinished(true);
+      return;
+    }
+
+    if (ultimateDraw) {
+      setUltimateHistory((previous) => ({ ...previous, draws: previous.draws + 1 }));
+      setUltimateFinished(true);
+    }
+  }, [ultimateDraw, ultimateFinished, ultimateWinner]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (activeGame !== "snake") {
+        return;
+      }
+
+      if (event.repeat) {
+        return;
+      }
+
+      const keyMap: Record<string, Direction | undefined> = {
+        ArrowUp: "up",
+        ArrowDown: "down",
+        ArrowLeft: "left",
+        ArrowRight: "right"
+      };
+
+      const nextDirection = keyMap[event.key];
+      if (!nextDirection) {
+        return;
+      }
+
+      event.preventDefault();
+      queueSnakeDirection(nextDirection);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeGame, queueSnakeDirection]);
+
+  useEffect(() => {
+    if (!snakeRunning || snakeGameOver) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setSnake((previous) => {
+        snakeInputLockedRef.current = false;
+        const direction = snakeQueuedDirectionRef.current;
+        snakeDirectionRef.current = direction;
+        const head = previous[0];
+
+        const delta: Record<Direction, SnakePoint> = {
+          up: { x: 0, y: -1 },
+          down: { x: 0, y: 1 },
+          left: { x: -1, y: 0 },
+          right: { x: 1, y: 0 }
+        };
+
+        const nextHead = {
+          x: head.x + delta[direction].x,
+          y: head.y + delta[direction].y
+        };
+
+        const wallHit = nextHead.x < 0 || nextHead.y < 0 || nextHead.x >= snakeBoardSize || nextHead.y >= snakeBoardSize;
+        const selfHit = previous.some((segment) => segment.x === nextHead.x && segment.y === nextHead.y);
+
+        if (wallHit || selfHit) {
+          setSnakeGameOver(true);
+          setSnakeRunning(false);
+          snakeInputLockedRef.current = false;
+          return previous;
+        }
+
+        const ateFood = nextHead.x === snakeFood.x && nextHead.y === snakeFood.y;
+        const nextSnake = [nextHead, ...previous];
+
+        if (!ateFood) {
+          nextSnake.pop();
+        } else {
+          setSnakeScore((score) => score + 1);
+          setSnakeFood(randomFreeCell(nextSnake));
+        }
+
+        return nextSnake;
+      });
+    }, snakeTickMs);
+
+    return () => window.clearInterval(interval);
+  }, [snakeFood, snakeGameOver, snakeRunning]);
+
+  useEffect(() => {
+    if (!showEasterEgg) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowEasterEgg(false);
+    }, 2200);
+
+    return () => window.clearTimeout(timer);
+  }, [showEasterEgg]);
+
+  useEffect(() => {
+    return () => {
+      clearMineLongPress();
+    };
+  }, [clearMineLongPress]);
+
   return (
     <main className="min-h-screen px-6 py-10">
       <Heartbeat />
       <div className="mx-auto max-w-6xl space-y-6">
         <AppHeader title="Spiele" />
 
-        <section className="rounded-xl border border-slate-700 bg-card p-5">
+        <section className="relative rounded-xl border border-slate-700 bg-card p-5">
+          <button
+            type="button"
+            onClick={() => setShowEasterEgg(true)}
+            className="absolute right-3 top-3 rounded-full border border-slate-600 bg-slate-900/70 px-2 py-1 text-xs text-slate-300 hover:border-accent"
+            aria-label="Easter Egg"
+          >
+            🍌
+          </button>
+          {showEasterEgg ? (
+            <div className="pointer-events-none absolute right-3 top-12 rounded-md border border-accent/40 bg-slate-900 px-3 py-1 text-xs text-amber-200 shadow-lg">
+              eeerrrww bananana
+            </div>
+          ) : null}
+
           <h2 className="text-xl font-semibold">Spielesammlung</h2>
           <p className="mt-1 text-sm text-slate-300">Wähle ein Spiel aus. Alle Spiele laufen lokal direkt im Browser.</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -616,7 +819,7 @@ export default function SpielePage() {
         {activeGame === "snake" ? (
           <section className="rounded-xl border border-slate-700 bg-card p-6">
             <h3 className="text-xl font-semibold">Snake</h3>
-            <p className="mt-1 text-sm text-slate-300">Steuerung mit Pfeiltasten oder Touch-Buttons. Futter sammeln erhöht den Score.</p>
+            <p className="mt-1 text-sm text-slate-300">Steuerung mit Pfeiltasten, Swipe oder Touch-Buttons. Futter sammeln erhöht den Score.</p>
 
             <div className="mt-4 space-y-3">
               <div className="flex flex-wrap gap-3 text-sm">
@@ -628,8 +831,12 @@ export default function SpielePage() {
               </p>
 
               <div
-                className="grid w-full max-w-[440px] gap-0.5 rounded-lg border border-slate-700 bg-slate-800 p-2"
+                className="grid w-full max-w-[440px] touch-none gap-0.5 rounded-lg border border-slate-700 bg-slate-800 p-2"
                 style={{ gridTemplateColumns: `repeat(${snakeBoardSize}, minmax(0, 1fr))` }}
+                onTouchStart={handleSnakeSwipeStart}
+                onTouchMove={handleSnakeSwipeMove}
+                onTouchEnd={handleSnakeSwipeEnd}
+                onTouchCancel={handleSnakeSwipeEnd}
               >
                 {Array.from({ length: snakeBoardSize * snakeBoardSize }, (_, index) => {
                   const x = index % snakeBoardSize;
@@ -688,7 +895,7 @@ export default function SpielePage() {
                 </button>
               </div>
 
-              <p className="text-xs text-slate-400 md:hidden">Touch-Steuerung: Tippe auf die Pfeil-Buttons (eine Richtungsänderung pro Tick).</p>
+              <p className="text-xs text-slate-400 md:hidden">Swipe auf dem Spielfeld oder nutze die Pfeil-Buttons (eine Richtungsänderung pro Tick).</p>
 
               <div className="flex flex-wrap gap-2">
                 <button
@@ -731,6 +938,26 @@ export default function SpielePage() {
               ))}
             </div>
 
+            {isTouchDevice ? (
+              <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/70 p-1">
+                <button
+                  type="button"
+                  onClick={() => setMineTouchFlagMode(false)}
+                  className={`rounded-md px-3 py-1 text-xs ${!mineTouchFlagMode ? "bg-accent text-white" : "text-slate-300"}`}
+                >
+                  Öffnen
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMineTouchFlagMode(true)}
+                  className={`rounded-md px-3 py-1 text-xs ${mineTouchFlagMode ? "bg-accent text-white" : "text-slate-300"}`}
+                >
+                  Flaggen
+                </button>
+                <p className="pl-1 text-xs text-slate-400">Langdruck setzt ebenfalls eine Flagge.</p>
+              </div>
+            ) : null}
+
             <div className="mt-4 grid gap-2 rounded-lg border border-slate-700 bg-slate-900/60 p-3 text-sm md:grid-cols-2">
               <p className="text-slate-200">
                 Schwierigkeit: <span className="font-semibold">{currentMineSettings.label}</span> ({currentMineSettings.size}×{currentMineSettings.size})
@@ -759,8 +986,11 @@ export default function SpielePage() {
                       <button
                         key={`${rowIndex}-${colIndex}`}
                         type="button"
-                        onClick={() => openMinesweeperCell(rowIndex, colIndex)}
-                        onContextMenu={(event) => toggleMineFlag(event, rowIndex, colIndex)}
+                        onClick={() => handleMineCellClick(rowIndex, colIndex)}
+                        onTouchStart={() => handleMineTouchStart(rowIndex, colIndex)}
+                        onTouchEnd={handleMineTouchEnd}
+                        onTouchCancel={handleMineTouchEnd}
+                        onContextMenu={(event) => handleMineContextMenu(event, rowIndex, colIndex)}
                         className={`aspect-square rounded border text-xs font-semibold sm:text-sm ${
                           cell.isOpen ? "border-slate-700 bg-slate-900 text-slate-100" : "border-slate-700 bg-slate-700/70 text-slate-100 hover:border-accent"
                         }`}
@@ -802,6 +1032,12 @@ export default function SpielePage() {
                     ? `Nächstes Ziel-Feld: ${utttTargetBoard! + 1}`
                     : "Nächstes Ziel-Feld: frei wählbar"}
               </p>
+            </div>
+
+            <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg border border-slate-700 bg-slate-900/60 p-3 text-xs sm:text-sm">
+              <p className="rounded bg-slate-800 px-2 py-1 text-slate-200">Siege X: <span className="font-semibold text-blue-300">{ultimateHistory.xWins}</span></p>
+              <p className="rounded bg-slate-800 px-2 py-1 text-slate-200">Siege O: <span className="font-semibold text-rose-300">{ultimateHistory.oWins}</span></p>
+              <p className="rounded bg-slate-800 px-2 py-1 text-slate-200">Unentschieden: <span className="font-semibold">{ultimateHistory.draws}</span></p>
             </div>
 
             <div className="mt-4 overflow-x-auto pb-1">
