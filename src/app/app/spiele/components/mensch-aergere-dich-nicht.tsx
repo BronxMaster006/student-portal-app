@@ -85,55 +85,55 @@ const trackCoordinates: Array<{ r: number; c: number }> = [
 
 const homeStretchCoordinates: Record<LudoColor, Array<{ r: number; c: number }>> = {
   rot: [
-    { r: 2, c: 5 },
-    { r: 3, c: 5 },
-    { r: 4, c: 5 },
-    { r: 5, c: 5 }
+    { r: 5, c: 1 },
+    { r: 5, c: 2 },
+    { r: 5, c: 3 },
+    { r: 5, c: 4 }
   ],
   blau: [
-    { r: 5, c: 8 },
-    { r: 5, c: 9 },
-    { r: 5, c: 10 },
-    { r: 5, c: 11 }
+    { r: 1, c: 8 },
+    { r: 2, c: 8 },
+    { r: 3, c: 8 },
+    { r: 4, c: 8 }
   ],
   gruen: [
-    { r: 8, c: 8 },
-    { r: 9, c: 8 },
-    { r: 10, c: 8 },
-    { r: 11, c: 8 }
+    { r: 8, c: 11 },
+    { r: 8, c: 10 },
+    { r: 8, c: 9 },
+    { r: 8, c: 8 }
   ],
   gelb: [
-    { r: 8, c: 5 },
-    { r: 9, c: 5 },
+    { r: 11, c: 5 },
     { r: 10, c: 5 },
-    { r: 11, c: 5 }
+    { r: 9, c: 5 },
+    { r: 8, c: 5 }
   ]
 };
 
 const houseCoordinates: Record<LudoColor, Array<{ r: number; c: number }>> = {
   rot: [
     { r: 1, c: 1 },
-    { r: 1, c: 3 },
-    { r: 3, c: 1 },
-    { r: 3, c: 3 }
+    { r: 1, c: 2 },
+    { r: 2, c: 1 },
+    { r: 2, c: 2 }
   ],
   blau: [
-    { r: 1, c: 9 },
+    { r: 1, c: 10 },
     { r: 1, c: 11 },
-    { r: 3, c: 9 },
-    { r: 3, c: 11 }
+    { r: 2, c: 10 },
+    { r: 2, c: 11 }
   ],
   gruen: [
-    { r: 9, c: 9 },
-    { r: 9, c: 11 },
-    { r: 11, c: 9 },
+    { r: 10, c: 10 },
+    { r: 10, c: 11 },
+    { r: 11, c: 10 },
     { r: 11, c: 11 }
   ],
   gelb: [
-    { r: 9, c: 1 },
-    { r: 9, c: 3 },
+    { r: 10, c: 1 },
+    { r: 10, c: 2 },
     { r: 11, c: 1 },
-    { r: 11, c: 3 }
+    { r: 11, c: 2 }
   ]
 };
 
