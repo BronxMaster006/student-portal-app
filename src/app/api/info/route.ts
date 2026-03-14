@@ -1,4 +1,29 @@
 import { NextResponse } from "next/server";
+<<<<<<< HEAD
+import { logError } from "@/lib/logging";
+import { prisma } from "@/lib/prisma";
+import { infoSchema, requireAdmin } from "@/lib/info-utils";
+
+export async function GET() {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
+  }
+
+  const posts = await prisma.infoPost.findMany({
+    orderBy: { createdAt: "desc" },
+    select: { id: true, title: true, content: true, createdAt: true }
+  });
+
+  return NextResponse.json({ posts });
+}
+
+export async function POST(request: Request) {
+  const session = await requireAdmin();
+
+  if (!session) {
+=======
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { logError } from "@/lib/logging";
@@ -13,6 +38,7 @@ export async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id || session.user.role !== "ADMIN") {
+>>>>>>> main
     return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
   }
 
@@ -41,3 +67,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Serverfehler beim Speichern." }, { status: 500 });
   }
 }
+<<<<<<< HEAD
+
+=======
+>>>>>>> main

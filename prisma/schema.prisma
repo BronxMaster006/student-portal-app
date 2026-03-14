@@ -60,6 +60,17 @@ model ActivityLog {
 }
 
 model ErrorLog {
+<<<<<<< HEAD
+  id        String    @id @default(cuid())
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  route     String?
+  message   String
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+}
+=======
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -69,3 +80,4 @@ model ErrorLog {
 
   @@index([createdAt])
 }
+>>>>>>> main
