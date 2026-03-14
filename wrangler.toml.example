@@ -1,0 +1,6 @@
+name = "student-portal-app"
+main = ".open-next/worker.js"
+compatibility_date = "2025-02-01"
+
+[vars]
+NEXTAUTH_URL = "https://deine-domain.example"
