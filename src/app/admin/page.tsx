@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ActivityType } from "@prisma/client";
 import { Heartbeat } from "@/components/heartbeat";
 import { LogoutButton } from "@/components/logout-button";
+import { AdminUserManagement } from "@/components/admin-user-management";
 import { auth } from "@/lib/auth";
 import { logActivity } from "@/lib/logging";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +15,16 @@ export default async function AdminPage() {
   }
 
   const [users, activities, errors] = await Promise.all([
-    prisma.user.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        firstName: true,
+        role: true,
+        lastSeenAt: true,
+        lastLoginAt: true
+      }
+    }),
     prisma.activityLog.findMany({
       orderBy: { createdAt: "desc" },
       take: 20,
@@ -27,8 +37,6 @@ export default async function AdminPage() {
     })
   ]);
 
-  const now = Date.now();
-
   return (
     <main className="min-h-screen px-6 py-10">
       <Heartbeat />
@@ -36,41 +44,19 @@ export default async function AdminPage() {
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-3xl font-bold">Admin-Dashboard</h1>
           <div className="flex items-center gap-3">
-            <Link href="/admin/info" className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white">Info erstellen</Link>
+            <Link href="/admin/info" className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white">Info-Posts verwalten</Link>
             <LogoutButton />
           </div>
         </header>
 
-        <section className="rounded-xl border border-slate-700 bg-card p-5">
-          <h2 className="mb-4 text-xl font-semibold">Registrierte Nutzer</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="text-slate-300">
-                <tr>
-                  <th className="p-2">Vorname</th>
-                  <th className="p-2">Rolle</th>
-                  <th className="p-2">Online</th>
-                  <th className="p-2">Last Seen</th>
-                  <th className="p-2">Last Login</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => {
-                  const online = user.lastSeenAt ? now - user.lastSeenAt.getTime() <= 60000 : false;
-                  return (
-                    <tr key={user.id} className="border-t border-slate-800">
-                      <td className="p-2">{user.firstName}</td>
-                      <td className="p-2">{user.role}</td>
-                      <td className="p-2">{online ? "Online" : "Offline"}</td>
-                      <td className="p-2">{user.lastSeenAt ? user.lastSeenAt.toLocaleString("de-DE") : "-"}</td>
-                      <td className="p-2">{user.lastLoginAt ? user.lastLoginAt.toLocaleString("de-DE") : "-"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <AdminUserManagement
+          initialUsers={users.map((user) => ({
+            ...user,
+            lastSeenAt: user.lastSeenAt ? user.lastSeenAt.toISOString() : null,
+            lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null
+          }))}
+          currentUserId={session?.user?.id}
+        />
 
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-xl border border-slate-700 bg-card p-5">

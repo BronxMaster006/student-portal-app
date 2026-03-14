@@ -135,7 +135,7 @@ export default function AdminInfoPage() {
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Info-Beitrag erstellen</h1>
+            <h1 className="text-3xl font-bold">Info-Posts verwalten</h1>
             <p className="text-sm text-slate-300">Neue Hinweise für alle eingeloggten Nutzer veröffentlichen.</p>
           </div>
           <Link href="/admin" className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-accent">
@@ -165,7 +165,7 @@ export default function AdminInfoPage() {
             {error ? <p className="text-sm text-red-300">{error}</p> : null}
             {success ? <p className="text-sm text-emerald-300">{success}</p> : null}
             <button disabled={loading} className="rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white hover:opacity-90">
-              {loading ? "Speichern..." : "Beitrag veröffentlichen"}
+              {loading ? "Speichern..." : "Neuen Beitrag veröffentlichen"}
             </button>
           </form>
         </section>
@@ -183,6 +183,7 @@ export default function AdminInfoPage() {
                 <article key={post.id} className="rounded-xl border border-slate-700 bg-slate-900/50 p-4">
                   {isEditing ? (
                     <div className="space-y-3">
+                      <p className="text-xs text-accent">Bearbeitungsmodus aktiv</p>
                       <input
                         value={editTitle}
                         onChange={(event) => setEditTitle(event.target.value)}
@@ -224,14 +225,14 @@ export default function AdminInfoPage() {
                           onClick={() => startEdit(post)}
                           className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-accent"
                         >
-                          Edit
+                          Bearbeiten
                         </button>
                         <button
                           type="button"
                           onClick={() => deletePost(post.id)}
                           className="rounded-lg border border-red-500/50 px-4 py-2 text-sm text-red-300 hover:border-red-400"
                         >
-                          Delete
+                          Löschen
                         </button>
                       </div>
                     </div>
