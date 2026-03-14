@@ -36,8 +36,6 @@ model User {
   infoPosts    InfoPost[]
 }
 
-<<<<<<< HEAD
-=======
 model InfoPost {
   id        String   @id @default(cuid())
   title     String
@@ -50,7 +48,6 @@ model InfoPost {
   @@index([createdAt])
 }
 
->>>>>>> codex-new
 model ActivityLog {
   id        String       @id @default(cuid())
   userId    String
@@ -63,7 +60,6 @@ model ActivityLog {
 }
 
 model ErrorLog {
-<<<<<<< HEAD
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -73,25 +69,3 @@ model ErrorLog {
 
   @@index([createdAt])
 }
-
-model InfoPost {
-  id        String   @id @default(cuid())
-  title     String
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id])
-}
-=======
-  id        String    @id @default(cuid())
-  userId    String?
-  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  route     String?
-  message   String
-  createdAt DateTime  @default(now())
-
-  @@index([createdAt])
-}
->>>>>>> codex-new
