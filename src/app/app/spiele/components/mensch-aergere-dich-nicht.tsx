@@ -19,6 +19,13 @@ const ludoColorStyles: Record<LudoColor, string> = {
   gelb: "bg-yellow-400"
 };
 
+const ludoColorTintStyles: Record<LudoColor, string> = {
+  rot: "bg-red-900/30 border-red-500/50",
+  blau: "bg-blue-900/30 border-blue-500/50",
+  gruen: "bg-emerald-900/30 border-emerald-500/50",
+  gelb: "bg-yellow-900/20 border-yellow-500/50"
+};
+
 const ludoColorLabel: Record<LudoColor, string> = {
   rot: "Rot",
   blau: "Blau",
@@ -31,13 +38,6 @@ const startIndex: Record<LudoColor, number> = {
   blau: 10,
   gruen: 20,
   gelb: 30
-};
-
-const homeEntryIndex: Record<LudoColor, number> = {
-  rot: 39,
-  blau: 9,
-  gruen: 19,
-  gelb: 29
 };
 
 const trackCoordinates: Array<{ r: number; c: number }> = [
@@ -85,28 +85,55 @@ const trackCoordinates: Array<{ r: number; c: number }> = [
 
 const homeStretchCoordinates: Record<LudoColor, Array<{ r: number; c: number }>> = {
   rot: [
-    { r: 6, c: 2 },
-    { r: 6, c: 3 },
-    { r: 6, c: 4 },
-    { r: 6, c: 5 }
+    { r: 2, c: 5 },
+    { r: 3, c: 5 },
+    { r: 4, c: 5 },
+    { r: 5, c: 5 }
   ],
   blau: [
-    { r: 2, c: 7 },
-    { r: 3, c: 7 },
-    { r: 4, c: 7 },
-    { r: 5, c: 7 }
+    { r: 5, c: 8 },
+    { r: 5, c: 9 },
+    { r: 5, c: 10 },
+    { r: 5, c: 11 }
   ],
   gruen: [
-    { r: 7, c: 11 },
-    { r: 7, c: 10 },
-    { r: 7, c: 9 },
-    { r: 7, c: 8 }
+    { r: 8, c: 8 },
+    { r: 9, c: 8 },
+    { r: 10, c: 8 },
+    { r: 11, c: 8 }
   ],
   gelb: [
-    { r: 11, c: 6 },
-    { r: 10, c: 6 },
-    { r: 9, c: 6 },
-    { r: 8, c: 6 }
+    { r: 8, c: 5 },
+    { r: 9, c: 5 },
+    { r: 10, c: 5 },
+    { r: 11, c: 5 }
+  ]
+};
+
+const houseCoordinates: Record<LudoColor, Array<{ r: number; c: number }>> = {
+  rot: [
+    { r: 1, c: 1 },
+    { r: 1, c: 3 },
+    { r: 3, c: 1 },
+    { r: 3, c: 3 }
+  ],
+  blau: [
+    { r: 1, c: 9 },
+    { r: 1, c: 11 },
+    { r: 3, c: 9 },
+    { r: 3, c: 11 }
+  ],
+  gruen: [
+    { r: 9, c: 9 },
+    { r: 9, c: 11 },
+    { r: 11, c: 9 },
+    { r: 11, c: 11 }
+  ],
+  gelb: [
+    { r: 9, c: 1 },
+    { r: 9, c: 3 },
+    { r: 11, c: 1 },
+    { r: 11, c: 3 }
   ]
 };
 
@@ -201,6 +228,8 @@ export function MenschAergereDichNichtGame() {
     const mapping = new Map<string, Array<{ color: LudoColor; pieceIndex: number }>>();
 
     for (const color of ludoColors) {
+      let houseCounter = 0;
+
       ludoState[color].forEach((piece, pieceIndex) => {
         let key: string | null = null;
 
@@ -211,6 +240,9 @@ export function MenschAergereDichNichtGame() {
           }
         } else if (piece.position >= 40) {
           key = `home-${color}-${piece.position - 40}`;
+        } else {
+          key = `house-${color}-${houseCounter}`;
+          houseCounter += 1;
         }
 
         if (!key) {
@@ -341,49 +373,60 @@ export function MenschAergereDichNichtGame() {
     });
   }
 
-  function renderCellContent(row: number, col: number) {
-    const trackIndex = trackCoordinates.findIndex((coord) => coord.r === row && coord.c === col);
-    if (trackIndex >= 0) {
-      const occupants = boardOccupancy.get(`track-${trackIndex}`) ?? [];
-      return (
-        <div className="flex h-full w-full items-center justify-center gap-0.5">
-          {occupants.map((piece) => (
-            <span key={`${piece.color}-${piece.pieceIndex}`} className={`h-2.5 w-2.5 rounded-full ${ludoColorStyles[piece.color]}`} />
-          ))}
-        </div>
-      );
-    }
-
-    for (const color of ludoColors) {
-      const homeCoords = homeStretchCoordinates[color];
-      const homeIndex = homeCoords.findIndex((coord) => coord.r === row && coord.c === col);
-      if (homeIndex >= 0) {
-        const occupants = boardOccupancy.get(`home-${color}-${homeIndex}`) ?? [];
-        return (
-          <div className="flex h-full w-full items-center justify-center gap-0.5">
-            {occupants.map((piece) => (
-              <span key={`${piece.color}-${piece.pieceIndex}`} className={`h-2.5 w-2.5 rounded-full ${ludoColorStyles[piece.color]}`} />
-            ))}
-          </div>
-        );
-      }
-    }
-
-    return null;
+  function renderOccupants(key: string) {
+    const occupants = boardOccupancy.get(key) ?? [];
+    return (
+      <div className="flex h-full w-full items-center justify-center gap-0.5">
+        {occupants.map((piece) => (
+          <span key={`${piece.color}-${piece.pieceIndex}`} className={`h-2.5 w-2.5 rounded-full ${ludoColorStyles[piece.color]}`} />
+        ))}
+      </div>
+    );
   }
 
-  function cellClass(row: number, col: number): string {
+  function getCellKind(row: number, col: number):
+    | { kind: "track"; key: string }
+    | { kind: "home"; color: LudoColor; key: string }
+    | { kind: "house"; color: LudoColor; key: string }
+    | { kind: "empty" } {
     const trackIndex = trackCoordinates.findIndex((coord) => coord.r === row && coord.c === col);
     if (trackIndex >= 0) {
-      const isStart = Object.values(startIndex).includes(trackIndex);
-      return `aspect-square rounded border ${isStart ? "border-accent bg-slate-700" : "border-slate-700 bg-slate-800"}`;
+      return { kind: "track", key: `track-${trackIndex}` };
     }
 
     for (const color of ludoColors) {
       const homeIndex = homeStretchCoordinates[color].findIndex((coord) => coord.r === row && coord.c === col);
       if (homeIndex >= 0) {
-        return "aspect-square rounded border border-slate-700 bg-slate-900";
+        return { kind: "home", color, key: `home-${color}-${homeIndex}` };
       }
+
+      const houseIndex = houseCoordinates[color].findIndex((coord) => coord.r === row && coord.c === col);
+      if (houseIndex >= 0) {
+        return { kind: "house", color, key: `house-${color}-${houseIndex}` };
+      }
+    }
+
+    return { kind: "empty" };
+  }
+
+  function cellClass(row: number, col: number): string {
+    const kind = getCellKind(row, col);
+
+    if (kind.kind === "track") {
+      const trackIndex = Number(kind.key.split("-")[1]);
+      const startColor = ludoColors.find((color) => startIndex[color] === trackIndex);
+      if (startColor) {
+        return `aspect-square rounded border ${ludoColorTintStyles[startColor]}`;
+      }
+      return "aspect-square rounded border border-slate-700 bg-slate-800";
+    }
+
+    if (kind.kind === "home" || kind.kind === "house") {
+      return `aspect-square rounded border ${ludoColorTintStyles[kind.color]}`;
+    }
+
+    if (row >= 5 && row <= 8 && col >= 5 && col <= 8) {
+      return "aspect-square rounded border border-slate-700 bg-slate-900";
     }
 
     return "aspect-square rounded border border-slate-800 bg-slate-950/40";
@@ -420,15 +463,20 @@ export function MenschAergereDichNichtGame() {
         </button>
       </div>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,520px)_1fr]">
+      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,560px)_1fr]">
         <div className="overflow-x-auto pb-1">
-          <div className="grid min-w-[440px] grid-cols-13 gap-1 rounded-lg border border-slate-700 bg-slate-800 p-2">
+          <div
+            className="grid min-w-[520px] gap-1 rounded-lg border border-slate-700 bg-slate-800 p-2"
+            style={{ gridTemplateColumns: "repeat(13, minmax(0, 1fr))" }}
+          >
             {Array.from({ length: 13 * 13 }, (_, index) => {
               const row = Math.floor(index / 13);
               const col = index % 13;
+              const kind = getCellKind(row, col);
+
               return (
                 <div key={`${row}-${col}`} className={cellClass(row, col)}>
-                  {renderCellContent(row, col)}
+                  {kind.kind !== "empty" ? renderOccupants(kind.key) : null}
                 </div>
               );
             })}
@@ -436,7 +484,7 @@ export function MenschAergereDichNichtGame() {
         </div>
 
         <div className="space-y-3">
-          <p className="text-sm text-slate-300">Mögliche Figuren:</p>
+          <p className="text-sm text-slate-300">Mögliche Figuren ({ludoColorLabel[activePlayer]}):</p>
           <div className="space-y-2">
             {ludoState[activePlayer].map((piece, pieceIndex) => {
               const canMovePiece = movablePieceIndices.includes(pieceIndex);
@@ -445,7 +493,7 @@ export function MenschAergereDichNichtGame() {
                   ? "Haus"
                   : piece.position >= 40
                     ? `Ziel ${piece.position - 39}/4`
-                    : `Feld ${piece.position + 1}`;
+                    : `Laufbahn ${piece.position + 1}`;
 
               return (
                 <button
