@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+<<<<<<< HEAD
 import { logError } from "@/lib/logging";
 import { prisma } from "@/lib/prisma";
 import { infoSchema, requireAdmin } from "@/lib/info-utils";
@@ -22,6 +23,22 @@ export async function POST(request: Request) {
   const session = await requireAdmin();
 
   if (!session) {
+=======
+import { z } from "zod";
+import { auth } from "@/lib/auth";
+import { logError } from "@/lib/logging";
+import { prisma } from "@/lib/prisma";
+
+const infoSchema = z.object({
+  title: z.string().trim().min(3, "Titel muss mindestens 3 Zeichen lang sein.").max(120, "Titel ist zu lang."),
+  content: z.string().trim().min(10, "Inhalt muss mindestens 10 Zeichen lang sein.").max(5000, "Inhalt ist zu lang.")
+});
+
+export async function POST(request: Request) {
+  const session = await auth();
+
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
+>>>>>>> main
     return NextResponse.json({ error: "Nicht autorisiert." }, { status: 403 });
   }
 
@@ -50,4 +67,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Serverfehler beim Speichern." }, { status: 500 });
   }
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> main

@@ -13,6 +13,7 @@ export async function loginAction(_: LoginState, formData: FormData): Promise<Lo
     await signIn("credentials", {
       firstName,
       password,
+<<<<<<< HEAD
       redirectTo: "/app"
     });
     return {};
@@ -20,6 +21,21 @@ export async function loginAction(_: LoginState, formData: FormData): Promise<Lo
     if (error instanceof AuthError) {
       return { error: "Anmeldung fehlgeschlagen. Bitte Daten prüfen." };
     }
+=======
+      redirectTo: "/app",
+    });
+
+    return {};
+  } catch (error: any) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+
+    if (error instanceof AuthError) {
+      return { error: "Anmeldung fehlgeschlagen. Bitte Daten prüfen." };
+    }
+
+>>>>>>> main
     return { error: "Unbekannter Fehler bei der Anmeldung." };
   }
 }

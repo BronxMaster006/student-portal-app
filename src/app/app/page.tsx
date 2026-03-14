@@ -7,18 +7,31 @@ const cards = [
   {
     title: "Spiele",
     description: "Hier findest du bald kleine Lern- und Fun-Games.",
+<<<<<<< HEAD
     href: "/app/spiele"
+=======
+    href: "/app/spiele",
+>>>>>>> main
   },
   {
     title: "Info-Seiten",
     description: "Wichtige Hinweise, Termine und Dokumente.",
+<<<<<<< HEAD
     href: "/app/info"
+=======
+    href: "/app/info",
+>>>>>>> main
   },
   {
     title: "Mathe-Rechner",
     description: "Nützliche Rechentools als Platzhalterbereich.",
+<<<<<<< HEAD
     href: "/app/rechner"
   }
+=======
+    href: "/app/rechner",
+  },
+>>>>>>> main
 ];
 
 export default async function AppPage() {
@@ -31,11 +44,27 @@ export default async function AppPage() {
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm text-slate-300">Eingeloggt als</p>
+<<<<<<< HEAD
             <h1 className="text-3xl font-bold">Hallo, {session?.user?.name ?? "Nutzer"}</h1>
           </div>
           <div className="flex items-center gap-3">
             {session?.user?.role === "ADMIN" ? (
               <Link href="/admin" className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white">Admin-Dashboard</Link>
+=======
+            <h1 className="text-3xl font-bold">
+              Hallo, {session?.user?.name ?? "Nutzer"}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {session?.user?.role === "ADMIN" ? (
+              <Link
+                href="/admin"
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white"
+              >
+                Admin-Dashboard
+              </Link>
+>>>>>>> main
             ) : null}
             <LogoutButton />
           </div>
@@ -43,13 +72,25 @@ export default async function AppPage() {
 
         <section className="grid gap-4 md:grid-cols-3">
           {cards.map((card) => (
+<<<<<<< HEAD
             <Link key={card.title} href={card.href} className="rounded-xl border border-slate-700 bg-card p-5 transition hover:border-accent">
               <h2 className="mb-2 text-xl font-semibold">{card.title}</h2>
               <p className="text-sm text-slate-300">{card.description}</p>
+=======
+            <Link key={card.title} href={card.href}>
+              <article className="rounded-xl border border-slate-700 bg-card p-5 transition hover:border-accent">
+                <h2 className="mb-2 text-xl font-semibold">{card.title}</h2>
+                <p className="text-sm text-slate-300">{card.description}</p>
+              </article>
+>>>>>>> main
             </Link>
           ))}
         </section>
       </div>
     </main>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> main

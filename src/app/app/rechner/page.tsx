@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "use client";
 
 import { useMemo, useState } from "react";
@@ -200,6 +201,18 @@ export default function RechnerPage() {
           <p className="mt-3 text-sm text-slate-300">Ergebnis X: <span className="font-semibold text-white">{ruleOfThreeText}</span></p>
           <p className="mt-2 text-xs text-slate-400">Formel: X = (B × C) / A. A darf nicht 0 sein.</p>
         </section>
+=======
+import { Heartbeat } from "@/components/heartbeat";
+import { AppHeader } from "@/components/app-header";
+
+export default function RechnerPage() {
+  return (
+    <main className="min-h-screen px-6 py-10">
+      <Heartbeat />
+      <div className="mx-auto max-w-3xl rounded-xl border border-slate-700 bg-card p-6">
+        <AppHeader title="Mathe-Rechner" />
+        <p className="text-slate-300">Dieser Bereich ist als Platzhalter vorbereitet. Hier folgen später Rechentools.</p>
+>>>>>>> main
       </div>
     </main>
   );

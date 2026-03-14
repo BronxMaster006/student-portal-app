@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
+<<<<<<< HEAD
 import { useEffect, useState } from "react";
+=======
+import { useState } from "react";
+>>>>>>> main
 import { Heartbeat } from "@/components/heartbeat";
 
 type ApiResponse = { error?: string; ok?: boolean };
 
+<<<<<<< HEAD
 type InfoPost = {
   id: string;
   title: string;
@@ -18,10 +23,13 @@ type InfoListResponse = {
   error?: string;
 };
 
+=======
+>>>>>>> main
 export default function AdminInfoPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
   const [posts, setPosts] = useState<InfoPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
@@ -46,6 +54,8 @@ export default function AdminInfoPage() {
   useEffect(() => {
     void loadPosts();
   }, []);
+=======
+>>>>>>> main
 
   async function onSubmit(formData: FormData) {
     setLoading(true);
@@ -73,6 +83,7 @@ export default function AdminInfoPage() {
 
     setSuccess("Beitrag wurde veröffentlicht.");
     setLoading(false);
+<<<<<<< HEAD
     await loadPosts();
   }
 
@@ -127,6 +138,8 @@ export default function AdminInfoPage() {
 
     setSuccess("Beitrag wurde gelöscht.");
     await loadPosts();
+=======
+>>>>>>> main
   }
 
   return (
@@ -135,7 +148,11 @@ export default function AdminInfoPage() {
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="flex items-center justify-between">
           <div>
+<<<<<<< HEAD
             <h1 className="text-3xl font-bold">Info-Posts verwalten</h1>
+=======
+            <h1 className="text-3xl font-bold">Info-Beitrag erstellen</h1>
+>>>>>>> main
             <p className="text-sm text-slate-300">Neue Hinweise für alle eingeloggten Nutzer veröffentlichen.</p>
           </div>
           <Link href="/admin" className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-accent">
@@ -165,6 +182,7 @@ export default function AdminInfoPage() {
             {error ? <p className="text-sm text-red-300">{error}</p> : null}
             {success ? <p className="text-sm text-emerald-300">{success}</p> : null}
             <button disabled={loading} className="rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white hover:opacity-90">
+<<<<<<< HEAD
               {loading ? "Speichern..." : "Neuen Beitrag veröffentlichen"}
             </button>
           </form>
@@ -242,6 +260,12 @@ export default function AdminInfoPage() {
             })}
           </div>
         </section>
+=======
+              {loading ? "Speichern..." : "Beitrag veröffentlichen"}
+            </button>
+          </form>
+        </section>
+>>>>>>> main
       </div>
     </main>
   );
