@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { Heartbeat } from "@/components/heartbeat";
+import { MenschAergereDichNichtGame } from "./components/mensch-aergere-dich-nicht";
+import { ChessV1Game } from "./components/chess-v1";
 
-type GameKey = "tictactoe" | "snake" | "minesweeper" | "ultimate";
+type GameKey = "tictactoe" | "snake" | "minesweeper" | "ultimate" | "mensch" | "chess";
 
 type CellValue = "X" | "O" | null;
 type SmallBoardResult = "X" | "O" | "draw" | null;
@@ -41,7 +43,9 @@ const gameTabs: { key: GameKey; label: string; description: string }[] = [
   { key: "tictactoe", label: "Tic-Tac-Toe", description: "2 Spieler lokal auf einem Gerät" },
   { key: "snake", label: "Snake", description: "Pfeiltasten, Touch oder Swipe" },
   { key: "minesweeper", label: "Minesweeper", description: "Mit Schwierigkeitsstufen" },
-  { key: "ultimate", label: "Ultimate Tic-Tac-Toe", description: "9 Felder mit Ziel-Feld-Regel" }
+  { key: "ultimate", label: "Ultimate Tic-Tac-Toe", description: "9 Felder mit Ziel-Feld-Regel" },
+  { key: "mensch", label: "Mensch ärgere dich nicht", description: "Klassisches Würfelspiel für 4 Farben" },
+  { key: "chess", label: "Schach V1", description: "Lokales 2-Spieler-Schach mit Kernregeln" }
 ];
 
 const snakeBoardSize = 14;
@@ -765,7 +769,7 @@ export default function SpielePage() {
 
           <h2 className="text-xl font-semibold">Spielesammlung</h2>
           <p className="mt-1 text-sm text-slate-300">Wähle ein Spiel aus. Alle Spiele laufen lokal direkt im Browser.</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {gameTabs.map((tab) => (
               <button
                 key={tab.key}
@@ -1112,6 +1116,10 @@ export default function SpielePage() {
             </button>
           </section>
         ) : null}
+
+        {activeGame === "mensch" ? <MenschAergereDichNichtGame /> : null}
+
+        {activeGame === "chess" ? <ChessV1Game /> : null}
       </div>
     </main>
   );
