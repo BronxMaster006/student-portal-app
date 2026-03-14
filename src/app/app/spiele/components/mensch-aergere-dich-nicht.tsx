@@ -10,6 +10,16 @@ type LudoPieceState = {
 
 type LudoState = Record<LudoColor, LudoPieceState[]>;
 
+type CellKind = "track" | "home" | "house" | "center" | "empty";
+
+type CellMeta = {
+  kind: CellKind;
+  color?: LudoColor;
+  key?: string;
+};
+
+const BOARD_SIZE = 13;
+
 const ludoColors: LudoColor[] = ["rot", "blau", "gruen", "gelb"];
 
 const ludoColorStyles: Record<LudoColor, string> = {
@@ -33,107 +43,115 @@ const ludoColorLabel: Record<LudoColor, string> = {
   gelb: "Gelb"
 };
 
-const startIndex: Record<LudoColor, number> = {
-  rot: 0,
-  blau: 10,
-  gruen: 20,
-  gelb: 30
-};
-
+// Geometrisch neu aufgebaut: klarer 40er-Laufweg als ringförmige Ein-Spur-Bahn.
 const trackCoordinates: Array<{ r: number; c: number }> = [
-  { r: 6, c: 1 },
-  { r: 6, c: 2 },
-  { r: 6, c: 3 },
-  { r: 6, c: 4 },
-  { r: 6, c: 5 },
-  { r: 5, c: 6 },
-  { r: 4, c: 6 },
-  { r: 3, c: 6 },
-  { r: 2, c: 6 },
+  // oben links -> oben rechts
+  { r: 1, c: 1 },
+  { r: 1, c: 2 },
+  { r: 1, c: 3 },
+  { r: 1, c: 4 },
+  { r: 1, c: 5 },
   { r: 1, c: 6 },
   { r: 1, c: 7 },
-  { r: 2, c: 7 },
-  { r: 3, c: 7 },
-  { r: 4, c: 7 },
-  { r: 5, c: 7 },
-  { r: 6, c: 8 },
-  { r: 6, c: 9 },
-  { r: 6, c: 10 },
+  { r: 1, c: 8 },
+  { r: 1, c: 9 },
+  { r: 1, c: 10 },
+  { r: 1, c: 11 },
+  // rechts oben -> rechts unten
+  { r: 2, c: 11 },
+  { r: 3, c: 11 },
+  { r: 4, c: 11 },
+  { r: 5, c: 11 },
   { r: 6, c: 11 },
-  { r: 6, c: 12 },
-  { r: 7, c: 12 },
   { r: 7, c: 11 },
-  { r: 7, c: 10 },
-  { r: 7, c: 9 },
-  { r: 7, c: 8 },
-  { r: 8, c: 7 },
-  { r: 9, c: 7 },
-  { r: 10, c: 7 },
+  { r: 8, c: 11 },
+  { r: 9, c: 11 },
+  { r: 10, c: 11 },
+  { r: 11, c: 11 },
+  // unten rechts -> unten links
+  { r: 11, c: 10 },
+  { r: 11, c: 9 },
+  { r: 11, c: 8 },
   { r: 11, c: 7 },
-  { r: 12, c: 7 },
-  { r: 12, c: 6 },
   { r: 11, c: 6 },
-  { r: 10, c: 6 },
-  { r: 9, c: 6 },
-  { r: 8, c: 6 },
-  { r: 7, c: 5 },
-  { r: 7, c: 4 },
-  { r: 7, c: 3 },
-  { r: 7, c: 2 },
-  { r: 7, c: 1 }
+  { r: 11, c: 5 },
+  { r: 11, c: 4 },
+  { r: 11, c: 3 },
+  { r: 11, c: 2 },
+  { r: 11, c: 1 },
+  // links unten -> links oben
+  { r: 10, c: 1 },
+  { r: 9, c: 1 },
+  { r: 8, c: 1 },
+  { r: 7, c: 1 },
+  { r: 6, c: 1 },
+  { r: 5, c: 1 },
+  { r: 4, c: 1 },
+  { r: 3, c: 1 },
+  { r: 2, c: 1 }
 ];
 
+// Startfelder logisch auf den vier Seitenmitteln.
+const startIndex: Record<LudoColor, number> = {
+  rot: 35,   // links Mitte (6,1)
+  blau: 5,   // oben Mitte (1,6)
+  gruen: 15, // rechts Mitte (6,11)
+  gelb: 25   // unten Mitte (11,6)
+};
+
+// Zielstrecken sauber zur Mitte ausgerichtet.
 const homeStretchCoordinates: Record<LudoColor, Array<{ r: number; c: number }>> = {
   rot: [
-    { r: 5, c: 1 },
-    { r: 5, c: 2 },
-    { r: 5, c: 3 },
-    { r: 5, c: 4 }
+    { r: 6, c: 2 },
+    { r: 6, c: 3 },
+    { r: 6, c: 4 },
+    { r: 6, c: 5 }
   ],
   blau: [
-    { r: 1, c: 8 },
-    { r: 2, c: 8 },
-    { r: 3, c: 8 },
-    { r: 4, c: 8 }
+    { r: 2, c: 6 },
+    { r: 3, c: 6 },
+    { r: 4, c: 6 },
+    { r: 5, c: 6 }
   ],
   gruen: [
-    { r: 8, c: 11 },
-    { r: 8, c: 10 },
-    { r: 8, c: 9 },
-    { r: 8, c: 8 }
+    { r: 6, c: 10 },
+    { r: 6, c: 9 },
+    { r: 6, c: 8 },
+    { r: 6, c: 7 }
   ],
   gelb: [
-    { r: 11, c: 5 },
-    { r: 10, c: 5 },
-    { r: 9, c: 5 },
-    { r: 8, c: 5 }
+    { r: 10, c: 6 },
+    { r: 9, c: 6 },
+    { r: 8, c: 6 },
+    { r: 7, c: 6 }
   ]
 };
 
+// Klare 2x2-Hausblöcke in den Ecken.
 const houseCoordinates: Record<LudoColor, Array<{ r: number; c: number }>> = {
   rot: [
-    { r: 1, c: 1 },
-    { r: 1, c: 2 },
-    { r: 2, c: 1 },
-    { r: 2, c: 2 }
+    { r: 3, c: 3 },
+    { r: 3, c: 4 },
+    { r: 4, c: 3 },
+    { r: 4, c: 4 }
   ],
   blau: [
-    { r: 1, c: 10 },
-    { r: 1, c: 11 },
-    { r: 2, c: 10 },
-    { r: 2, c: 11 }
+    { r: 3, c: 8 },
+    { r: 3, c: 9 },
+    { r: 4, c: 8 },
+    { r: 4, c: 9 }
   ],
   gruen: [
-    { r: 10, c: 10 },
-    { r: 10, c: 11 },
-    { r: 11, c: 10 },
-    { r: 11, c: 11 }
+    { r: 8, c: 8 },
+    { r: 8, c: 9 },
+    { r: 9, c: 8 },
+    { r: 9, c: 9 }
   ],
   gelb: [
-    { r: 10, c: 1 },
-    { r: 10, c: 2 },
-    { r: 11, c: 1 },
-    { r: 11, c: 2 }
+    { r: 8, c: 3 },
+    { r: 8, c: 4 },
+    { r: 9, c: 3 },
+    { r: 9, c: 4 }
   ]
 };
 
@@ -157,7 +175,7 @@ function isInHomeStretch(position: number): boolean {
   return position >= 40;
 }
 
-function positionAfterMove(color: LudoColor, currentPosition: number, dice: number): number | null {
+function positionAfterMove(currentPosition: number, dice: number): number | null {
   if (currentPosition === -1) {
     return dice === 6 ? 0 : null;
   }
@@ -185,7 +203,7 @@ function getMovablePieceIndices(ludoState: LudoState, color: LudoColor, dice: nu
   const movable: number[] = [];
 
   ludoState[color].forEach((piece, index) => {
-    const target = positionAfterMove(color, piece.position, dice);
+    const target = positionAfterMove(piece.position, dice);
     if (target === null) {
       return;
     }
@@ -207,6 +225,38 @@ function nextColor(color: LudoColor): LudoColor {
 
 function isWinner(ludoState: LudoState, color: LudoColor): boolean {
   return ludoState[color].every((piece) => piece.position === 43);
+}
+
+const boardTemplate: CellMeta[][] = Array.from({ length: BOARD_SIZE }, () =>
+  Array.from({ length: BOARD_SIZE }, () => ({ kind: "empty" as CellKind }))
+);
+
+// Laufweg
+trackCoordinates.forEach((coord, trackIndex) => {
+  boardTemplate[coord.r][coord.c] = { kind: "track", key: `track-${trackIndex}` };
+});
+
+// Zielstrecken
+for (const color of ludoColors) {
+  homeStretchCoordinates[color].forEach((coord, homeIndex) => {
+    boardTemplate[coord.r][coord.c] = { kind: "home", color, key: `home-${color}-${homeIndex}` };
+  });
+}
+
+// Häuser
+for (const color of ludoColors) {
+  houseCoordinates[color].forEach((coord, houseIndex) => {
+    boardTemplate[coord.r][coord.c] = { kind: "house", color, key: `house-${color}-${houseIndex}` };
+  });
+}
+
+// Brettmitte
+for (let r = 5; r <= 7; r += 1) {
+  for (let c = 5; c <= 7; c += 1) {
+    if (boardTemplate[r][c].kind === "empty") {
+      boardTemplate[r][c] = { kind: "center" };
+    }
+  }
 }
 
 export function MenschAergereDichNichtGame() {
@@ -325,7 +375,7 @@ export function MenschAergereDichNichtGame() {
       };
 
       const movingPiece = nextState[currentPlayer][pieceIndex];
-      const targetPosition = positionAfterMove(currentPlayer, movingPiece.position, rolled);
+      const targetPosition = positionAfterMove(movingPiece.position, rolled);
       if (targetPosition === null) {
         return previous;
       }
@@ -384,36 +434,9 @@ export function MenschAergereDichNichtGame() {
     );
   }
 
-  function getCellKind(row: number, col: number):
-    | { kind: "track"; key: string }
-    | { kind: "home"; color: LudoColor; key: string }
-    | { kind: "house"; color: LudoColor; key: string }
-    | { kind: "empty" } {
-    const trackIndex = trackCoordinates.findIndex((coord) => coord.r === row && coord.c === col);
-    if (trackIndex >= 0) {
-      return { kind: "track", key: `track-${trackIndex}` };
-    }
-
-    for (const color of ludoColors) {
-      const homeIndex = homeStretchCoordinates[color].findIndex((coord) => coord.r === row && coord.c === col);
-      if (homeIndex >= 0) {
-        return { kind: "home", color, key: `home-${color}-${homeIndex}` };
-      }
-
-      const houseIndex = houseCoordinates[color].findIndex((coord) => coord.r === row && coord.c === col);
-      if (houseIndex >= 0) {
-        return { kind: "house", color, key: `house-${color}-${houseIndex}` };
-      }
-    }
-
-    return { kind: "empty" };
-  }
-
-  function cellClass(row: number, col: number): string {
-    const kind = getCellKind(row, col);
-
-    if (kind.kind === "track") {
-      const trackIndex = Number(kind.key.split("-")[1]);
+  function cellClass(cell: CellMeta): string {
+    if (cell.kind === "track") {
+      const trackIndex = Number(cell.key?.split("-")[1] ?? -1);
       const startColor = ludoColors.find((color) => startIndex[color] === trackIndex);
       if (startColor) {
         return `aspect-square rounded border ${ludoColorTintStyles[startColor]}`;
@@ -421,11 +444,11 @@ export function MenschAergereDichNichtGame() {
       return "aspect-square rounded border border-slate-700 bg-slate-800";
     }
 
-    if (kind.kind === "home" || kind.kind === "house") {
-      return `aspect-square rounded border ${ludoColorTintStyles[kind.color]}`;
+    if (cell.kind === "home" || cell.kind === "house") {
+      return `aspect-square rounded border ${ludoColorTintStyles[cell.color!]}`;
     }
 
-    if (row >= 5 && row <= 8 && col >= 5 && col <= 8) {
+    if (cell.kind === "center") {
       return "aspect-square rounded border border-slate-700 bg-slate-900";
     }
 
@@ -467,19 +490,15 @@ export function MenschAergereDichNichtGame() {
         <div className="overflow-x-auto pb-1">
           <div
             className="grid min-w-[520px] gap-1 rounded-lg border border-slate-700 bg-slate-800 p-2"
-            style={{ gridTemplateColumns: "repeat(13, minmax(0, 1fr))" }}
+            style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, minmax(0, 1fr))` }}
           >
-            {Array.from({ length: 13 * 13 }, (_, index) => {
-              const row = Math.floor(index / 13);
-              const col = index % 13;
-              const kind = getCellKind(row, col);
-
-              return (
-                <div key={`${row}-${col}`} className={cellClass(row, col)}>
-                  {kind.kind !== "empty" ? renderOccupants(kind.key) : null}
+            {boardTemplate.flatMap((row, rowIndex) =>
+              row.map((cell, colIndex) => (
+                <div key={`${rowIndex}-${colIndex}`} className={cellClass(cell)}>
+                  {cell.key ? renderOccupants(cell.key) : null}
                 </div>
-              );
-            })}
+              ))
+            )}
           </div>
         </div>
 
