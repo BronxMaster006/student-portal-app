@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { Heartbeat } from "@/components/heartbeat";
 
@@ -22,16 +22,28 @@ type MinesweeperCell = {
   neighborMines: number;
 };
 
+type MinesweeperDifficultyKey = "leicht" | "mittel" | "schwer";
+
+type MinesweeperDifficulty = {
+  label: string;
+  size: number;
+  mines: number;
+};
+
 const gameTabs: { key: GameKey; label: string; description: string }[] = [
   { key: "tictactoe", label: "Tic-Tac-Toe", description: "2 Spieler lokal auf einem Gerät" },
-  { key: "snake", label: "Snake", description: "Pfeiltasten steuern die Schlange" },
-  { key: "minesweeper", label: "Minesweeper", description: "8x8 Feld mit Minen und Zahlen" }
+  { key: "snake", label: "Snake", description: "Pfeiltasten oder Touch-Steuerung" },
+  { key: "minesweeper", label: "Minesweeper", description: "Mit Schwierigkeitsstufen" }
 ];
 
 const snakeBoardSize = 14;
 const snakeTickMs = 180;
-const minesweeperSize = 8;
-const minesweeperMines = 10;
+
+const minesweeperDifficulties: Record<MinesweeperDifficultyKey, MinesweeperDifficulty> = {
+  leicht: { label: "Leicht", size: 8, mines: 10 },
+  mittel: { label: "Mittel", size: 12, mines: 24 },
+  schwer: { label: "Schwer", size: 16, mines: 45 }
+};
 
 function getWinner(board: CellValue[]): CellValue {
   const lines = [
@@ -54,7 +66,7 @@ function getWinner(board: CellValue[]): CellValue {
   return null;
 }
 
-function createMinesweeperBoard(size: number, mineCount: number): MinesweeperCell[][] {
+function createMinesweeperBoard(size: number, mineCount: number, safeIndex?: number): MinesweeperCell[][] {
   const board = Array.from({ length: size }, () =>
     Array.from({ length: size }, () => ({
       isMine: false,
@@ -64,14 +76,16 @@ function createMinesweeperBoard(size: number, mineCount: number): MinesweeperCel
     }))
   );
 
-  const allPositions = Array.from({ length: size * size }, (_, index) => index);
+  const allPositions = Array.from({ length: size * size }, (_, index) => index).filter((index) => index !== safeIndex);
 
   for (let i = allPositions.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [allPositions[i], allPositions[j]] = [allPositions[j], allPositions[i]];
   }
 
-  for (let i = 0; i < mineCount; i += 1) {
+  const actualMineCount = Math.min(mineCount, allPositions.length);
+
+  for (let i = 0; i < actualMineCount; i += 1) {
     const position = allPositions[i];
     const row = Math.floor(position / size);
     const col = position % size;
@@ -139,9 +153,22 @@ export default function SpielePage() {
   const snakeDirectionRef = useRef<Direction>("right");
   const snakeQueuedDirectionRef = useRef<Direction>("right");
 
-  const [mineBoard, setMineBoard] = useState<MinesweeperCell[][]>(() => createMinesweeperBoard(minesweeperSize, minesweeperMines));
+  const [mineDifficulty, setMineDifficulty] = useState<MinesweeperDifficultyKey>("leicht");
+  const [mineBoard, setMineBoard] = useState<MinesweeperCell[][]>(() =>
+    createMinesweeperBoard(minesweeperDifficulties.leicht.size, minesweeperDifficulties.leicht.mines)
+  );
   const [mineGameOver, setMineGameOver] = useState(false);
   const [mineWon, setMineWon] = useState(false);
+  const [mineFirstClickDone, setMineFirstClickDone] = useState(false);
+
+  const currentMineSettings = minesweeperDifficulties[mineDifficulty];
+
+  const flaggedCount = useMemo(
+    () => mineBoard.flat().reduce((count, cell) => count + (cell.isFlagged ? 1 : 0), 0),
+    [mineBoard]
+  );
+
+  const remainingMines = currentMineSettings.mines - flaggedCount;
 
   function resetTicTacToe() {
     setTttBoard(Array(9).fill(null));
@@ -182,6 +209,18 @@ export default function SpielePage() {
     return free[Math.floor(Math.random() * free.length)];
   }
 
+  const queueSnakeDirection = useCallback((nextDirection: Direction) => {
+    if (isOppositeDirection(snakeDirectionRef.current, nextDirection)) {
+      return;
+    }
+
+    snakeQueuedDirectionRef.current = nextDirection;
+
+    if (!snakeRunning && !snakeGameOver) {
+      setSnakeRunning(true);
+    }
+  }, [snakeGameOver, snakeRunning]);
+
   function resetSnake() {
     const initialSnake = [
       { x: 6, y: 7 },
@@ -216,21 +255,12 @@ export default function SpielePage() {
       }
 
       event.preventDefault();
-
-      if (isOppositeDirection(snakeDirectionRef.current, nextDirection)) {
-        return;
-      }
-
-      snakeQueuedDirectionRef.current = nextDirection;
-
-      if (!snakeRunning && !snakeGameOver) {
-        setSnakeRunning(true);
-      }
+      queueSnakeDirection(nextDirection);
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeGame, snakeGameOver, snakeRunning]);
+  }, [activeGame, queueSnakeDirection]);
 
   useEffect(() => {
     if (!snakeRunning || snakeGameOver) {
@@ -291,7 +321,7 @@ export default function SpielePage() {
       }
 
       const { row: currentRow, col: currentCol } = current;
-      if (currentRow < 0 || currentCol < 0 || currentRow >= minesweeperSize || currentCol >= minesweeperSize) {
+      if (currentRow < 0 || currentCol < 0 || currentRow >= currentMineSettings.size || currentCol >= currentMineSettings.size) {
         continue;
       }
 
@@ -318,8 +348,8 @@ export default function SpielePage() {
   }
 
   function checkMinesweeperWin(board: MinesweeperCell[][]): boolean {
-    for (let row = 0; row < minesweeperSize; row += 1) {
-      for (let col = 0; col < minesweeperSize; col += 1) {
+    for (let row = 0; row < currentMineSettings.size; row += 1) {
+      for (let col = 0; col < currentMineSettings.size; col += 1) {
         const cell = board[row][col];
         if (!cell.isMine && !cell.isOpen) {
           return false;
@@ -329,18 +359,36 @@ export default function SpielePage() {
     return true;
   }
 
+  function resetMinesweeper(nextDifficulty?: MinesweeperDifficultyKey) {
+    const difficulty = nextDifficulty ?? mineDifficulty;
+    const settings = minesweeperDifficulties[difficulty];
+    setMineDifficulty(difficulty);
+    setMineBoard(createMinesweeperBoard(settings.size, settings.mines));
+    setMineGameOver(false);
+    setMineWon(false);
+    setMineFirstClickDone(false);
+  }
+
   function openMinesweeperCell(row: number, col: number) {
     if (mineGameOver || mineWon) {
       return;
     }
 
     setMineBoard((previous) => {
-      const next = previous.map((line) => line.map((cell) => ({ ...cell })));
-      const cell = next[row][col];
-
-      if (cell.isOpen || cell.isFlagged) {
+      const currentCell = previous[row][col];
+      if (currentCell.isOpen || currentCell.isFlagged) {
         return previous;
       }
+
+      let next = previous.map((line) => line.map((cell) => ({ ...cell })));
+
+      if (!mineFirstClickDone) {
+        const safeIndex = row * currentMineSettings.size + col;
+        next = createMinesweeperBoard(currentMineSettings.size, currentMineSettings.mines, safeIndex);
+        setMineFirstClickDone(true);
+      }
+
+      const cell = next[row][col];
 
       if (cell.isMine) {
         for (const boardRow of next) {
@@ -380,12 +428,6 @@ export default function SpielePage() {
       cell.isFlagged = !cell.isFlagged;
       return next;
     });
-  }
-
-  function resetMinesweeper() {
-    setMineBoard(createMinesweeperBoard(minesweeperSize, minesweeperMines));
-    setMineGameOver(false);
-    setMineWon(false);
   }
 
   return (
@@ -451,7 +493,7 @@ export default function SpielePage() {
         {activeGame === "snake" ? (
           <section className="rounded-xl border border-slate-700 bg-card p-6">
             <h3 className="text-xl font-semibold">Snake</h3>
-            <p className="mt-1 text-sm text-slate-300">Steuerung mit Pfeiltasten. Futter sammeln erhöht den Score. Kollision beendet das Spiel.</p>
+            <p className="mt-1 text-sm text-slate-300">Steuerung mit Pfeiltasten oder Touch-Buttons. Futter sammeln erhöht den Score.</p>
 
             <div className="mt-4 space-y-3">
               <p className="text-sm text-slate-200">Score: {snakeScore}</p>
@@ -459,8 +501,10 @@ export default function SpielePage() {
                 {snakeGameOver ? "Game Over. Starte neu, um weiterzuspielen." : snakeRunning ? "Läuft..." : "Bereit. Starte das Spiel."}
               </p>
 
-              <div className="grid w-full max-w-[420px] gap-0.5 rounded-lg border border-slate-700 bg-slate-800 p-2"
-                style={{ gridTemplateColumns: `repeat(${snakeBoardSize}, minmax(0, 1fr))` }}>
+              <div
+                className="grid w-full max-w-[420px] gap-0.5 rounded-lg border border-slate-700 bg-slate-800 p-2"
+                style={{ gridTemplateColumns: `repeat(${snakeBoardSize}, minmax(0, 1fr))` }}
+              >
                 {Array.from({ length: snakeBoardSize * snakeBoardSize }, (_, index) => {
                   const x = index % snakeBoardSize;
                   const y = Math.floor(index / snakeBoardSize);
@@ -484,6 +528,41 @@ export default function SpielePage() {
                   );
                 })}
               </div>
+
+              <div className="grid w-full max-w-[220px] grid-cols-3 gap-2 md:hidden">
+                <div />
+                <button
+                  type="button"
+                  onClick={() => queueSnakeDirection("up")}
+                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-accent"
+                >
+                  ↑
+                </button>
+                <div />
+                <button
+                  type="button"
+                  onClick={() => queueSnakeDirection("left")}
+                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-accent"
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  onClick={() => queueSnakeDirection("down")}
+                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-accent"
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  onClick={() => queueSnakeDirection("right")}
+                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-accent"
+                >
+                  →
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-400 md:hidden">Touch-Steuerung: Tippe auf die Pfeil-Buttons.</p>
 
               <div className="flex flex-wrap gap-2">
                 <button
@@ -509,13 +588,35 @@ export default function SpielePage() {
         {activeGame === "minesweeper" ? (
           <section className="rounded-xl border border-slate-700 bg-card p-6">
             <h3 className="text-xl font-semibold">Minesweeper</h3>
-            <p className="mt-1 text-sm text-slate-300">Öffne sichere Felder. Rechtsklick markiert Minen mit einer Flagge.</p>
+            <p className="mt-1 text-sm text-slate-300">Erster Klick ist immer sicher. Rechtsklick markiert Minen mit einer Flagge.</p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {Object.entries(minesweeperDifficulties).map(([key, value]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => resetMinesweeper(key as MinesweeperDifficultyKey)}
+                  className={`rounded-lg border px-3 py-1 text-sm transition ${
+                    mineDifficulty === key ? "border-accent bg-slate-900 text-white" : "border-slate-700 text-slate-200 hover:border-accent"
+                  }`}
+                >
+                  {value.label}
+                </button>
+              ))}
+            </div>
 
             <p className="mt-3 text-sm text-slate-200">
+              Schwierigkeit: {currentMineSettings.label} ({currentMineSettings.size}×{currentMineSettings.size}, {currentMineSettings.mines} Minen)
+            </p>
+            <p className="mt-1 text-sm text-slate-300">Verbleibende Minen (geschätzt): {remainingMines}</p>
+            <p className="mt-1 text-sm text-slate-200">
               {mineGameOver ? "Verloren: Du hast eine Mine geöffnet." : mineWon ? "Gewonnen: Alle sicheren Felder sind aufgedeckt." : "Spiel läuft."}
             </p>
 
-            <div className="mt-4 grid w-full max-w-[420px] grid-cols-8 gap-1">
+            <div
+              className="mt-4 grid w-full max-w-[560px] gap-1"
+              style={{ gridTemplateColumns: `repeat(${currentMineSettings.size}, minmax(0, 1fr))` }}
+            >
               {mineBoard.map((row, rowIndex) =>
                 row.map((cell, colIndex) => {
                   const content = cell.isOpen ? (cell.isMine ? "💣" : cell.neighborMines === 0 ? "" : cell.neighborMines) : cell.isFlagged ? "🚩" : "";
@@ -526,7 +627,7 @@ export default function SpielePage() {
                       type="button"
                       onClick={() => openMinesweeperCell(rowIndex, colIndex)}
                       onContextMenu={(event) => toggleMineFlag(event, rowIndex, colIndex)}
-                      className={`aspect-square rounded border text-sm font-semibold ${
+                      className={`aspect-square rounded border text-xs font-semibold sm:text-sm ${
                         cell.isOpen ? "border-slate-700 bg-slate-900 text-slate-100" : "border-slate-700 bg-slate-800 text-slate-100 hover:border-accent"
                       }`}
                     >
@@ -537,7 +638,7 @@ export default function SpielePage() {
               )}
             </div>
 
-            <button type="button" onClick={resetMinesweeper} className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-accent">
+            <button type="button" onClick={() => resetMinesweeper()} className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-accent">
               Neustart
             </button>
           </section>
