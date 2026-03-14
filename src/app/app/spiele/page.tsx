@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { Heartbeat } from "@/components/heartbeat";
 
-type GameKey = "tictactoe" | "snake" | "minesweeper";
+type GameKey = "tictactoe" | "snake" | "minesweeper" | "ultimate";
 
 type CellValue = "X" | "O" | null;
+type SmallBoardResult = "X" | "O" | "draw" | null;
 
 type SnakePoint = {
   x: number;
@@ -33,11 +34,13 @@ type MinesweeperDifficulty = {
 const gameTabs: { key: GameKey; label: string; description: string }[] = [
   { key: "tictactoe", label: "Tic-Tac-Toe", description: "2 Spieler lokal auf einem Gerät" },
   { key: "snake", label: "Snake", description: "Pfeiltasten oder Touch-Steuerung" },
-  { key: "minesweeper", label: "Minesweeper", description: "Mit Schwierigkeitsstufen" }
+  { key: "minesweeper", label: "Minesweeper", description: "Mit Schwierigkeitsstufen" },
+  { key: "ultimate", label: "Ultimate Tic-Tac-Toe", description: "9 Felder mit Ziel-Feld-Regel" }
 ];
 
 const snakeBoardSize = 14;
 const snakeTickMs = 180;
+const snakeBestScoreStorageKey = "student-portal-snake-bestscore";
 
 const minesweeperDifficulties: Record<MinesweeperDifficultyKey, MinesweeperDifficulty> = {
   leicht: { label: "Leicht", size: 8, mines: 10 },
@@ -64,6 +67,10 @@ function getWinner(board: CellValue[]): CellValue {
   }
 
   return null;
+}
+
+function isBoardFull(board: CellValue[]): boolean {
+  return board.every((cell) => cell !== null);
 }
 
 function createMinesweeperBoard(size: number, mineCount: number, safeIndex?: number): MinesweeperCell[][] {
@@ -133,6 +140,14 @@ function isOppositeDirection(a: Direction, b: Direction): boolean {
   );
 }
 
+function createEmptyUltimateBoards(): CellValue[][] {
+  return Array.from({ length: 9 }, () => Array(9).fill(null));
+}
+
+function createEmptyUltimateWinners(): SmallBoardResult[] {
+  return Array(9).fill(null);
+}
+
 export default function SpielePage() {
   const [activeGame, setActiveGame] = useState<GameKey>("tictactoe");
 
@@ -150,8 +165,10 @@ export default function SpielePage() {
   const [snakeRunning, setSnakeRunning] = useState(false);
   const [snakeGameOver, setSnakeGameOver] = useState(false);
   const [snakeScore, setSnakeScore] = useState(0);
+  const [snakeBestScore, setSnakeBestScore] = useState(0);
   const snakeDirectionRef = useRef<Direction>("right");
   const snakeQueuedDirectionRef = useRef<Direction>("right");
+  const snakeInputLockedRef = useRef(false);
 
   const [mineDifficulty, setMineDifficulty] = useState<MinesweeperDifficultyKey>("leicht");
   const [mineBoard, setMineBoard] = useState<MinesweeperCell[][]>(() =>
@@ -161,6 +178,11 @@ export default function SpielePage() {
   const [mineWon, setMineWon] = useState(false);
   const [mineFirstClickDone, setMineFirstClickDone] = useState(false);
 
+  const [utttBoards, setUtttBoards] = useState<CellValue[][]>(() => createEmptyUltimateBoards());
+  const [utttSmallWinners, setUtttSmallWinners] = useState<SmallBoardResult[]>(() => createEmptyUltimateWinners());
+  const [utttTurn, setUtttTurn] = useState<"X" | "O">("X");
+  const [utttTargetBoard, setUtttTargetBoard] = useState<number | null>(null);
+
   const currentMineSettings = minesweeperDifficulties[mineDifficulty];
 
   const flaggedCount = useMemo(
@@ -169,6 +191,16 @@ export default function SpielePage() {
   );
 
   const remainingMines = currentMineSettings.mines - flaggedCount;
+
+  const ultimateBigBoard = useMemo<CellValue[]>(
+    () => utttSmallWinners.map((winner) => (winner === "X" || winner === "O" ? winner : null)),
+    [utttSmallWinners]
+  );
+  const ultimateWinner = useMemo(() => getWinner(ultimateBigBoard), [ultimateBigBoard]);
+  const ultimateDraw = useMemo(
+    () => !ultimateWinner && utttSmallWinners.every((result) => result !== null),
+    [ultimateWinner, utttSmallWinners]
+  );
 
   function resetTicTacToe() {
     setTttBoard(Array(9).fill(null));
@@ -210,11 +242,16 @@ export default function SpielePage() {
   }
 
   const queueSnakeDirection = useCallback((nextDirection: Direction) => {
+    if (snakeInputLockedRef.current && snakeRunning) {
+      return;
+    }
+
     if (isOppositeDirection(snakeDirectionRef.current, nextDirection)) {
       return;
     }
 
     snakeQueuedDirectionRef.current = nextDirection;
+    snakeInputLockedRef.current = true;
 
     if (!snakeRunning && !snakeGameOver) {
       setSnakeRunning(true);
@@ -234,11 +271,46 @@ export default function SpielePage() {
     setSnakeRunning(false);
     snakeDirectionRef.current = "right";
     snakeQueuedDirectionRef.current = "right";
+    snakeInputLockedRef.current = false;
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const stored = window.localStorage.getItem(snakeBestScoreStorageKey);
+    if (!stored) {
+      return;
+    }
+
+    const parsed = Number.parseInt(stored, 10);
+    if (!Number.isNaN(parsed) && parsed >= 0) {
+      setSnakeBestScore(parsed);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (snakeScore > snakeBestScore) {
+      setSnakeBestScore(snakeScore);
+    }
+  }, [snakeBestScore, snakeScore]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(snakeBestScoreStorageKey, String(snakeBestScore));
+  }, [snakeBestScore]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (activeGame !== "snake") {
+        return;
+      }
+
+      if (event.repeat) {
         return;
       }
 
@@ -269,6 +341,7 @@ export default function SpielePage() {
 
     const interval = setInterval(() => {
       setSnake((previous) => {
+        snakeInputLockedRef.current = false;
         const direction = snakeQueuedDirectionRef.current;
         snakeDirectionRef.current = direction;
         const head = previous[0];
@@ -291,6 +364,7 @@ export default function SpielePage() {
         if (wallHit || selfHit) {
           setSnakeGameOver(true);
           setSnakeRunning(false);
+          snakeInputLockedRef.current = false;
           return previous;
         }
 
@@ -300,7 +374,7 @@ export default function SpielePage() {
         if (!ateFood) {
           nextSnake.pop();
         } else {
-          setSnakeScore((s) => s + 1);
+          setSnakeScore((score) => score + 1);
           setSnakeFood(randomFreeCell(nextSnake));
         }
 
@@ -430,6 +504,55 @@ export default function SpielePage() {
     });
   }
 
+  function resetUltimateTicTacToe() {
+    setUtttBoards(createEmptyUltimateBoards());
+    setUtttSmallWinners(createEmptyUltimateWinners());
+    setUtttTurn("X");
+    setUtttTargetBoard(null);
+  }
+
+  function playUltimateCell(boardIndex: number, cellIndex: number) {
+    if (ultimateWinner || ultimateDraw) {
+      return;
+    }
+
+    const forcedBoardStillOpen = utttTargetBoard !== null && utttSmallWinners[utttTargetBoard] === null;
+    if (forcedBoardStillOpen && boardIndex !== utttTargetBoard) {
+      return;
+    }
+
+    if (utttSmallWinners[boardIndex] !== null) {
+      return;
+    }
+
+    if (utttBoards[boardIndex][cellIndex] !== null) {
+      return;
+    }
+
+    const nextBoards = utttBoards.map((board) => [...board]);
+    nextBoards[boardIndex][cellIndex] = utttTurn;
+
+    const nextSmallWinners = [...utttSmallWinners];
+    const updatedSmallBoard = nextBoards[boardIndex];
+    const smallBoardWinner = getWinner(updatedSmallBoard);
+
+    if (smallBoardWinner) {
+      nextSmallWinners[boardIndex] = smallBoardWinner;
+    } else if (isBoardFull(updatedSmallBoard)) {
+      nextSmallWinners[boardIndex] = "draw";
+    }
+
+    setUtttBoards(nextBoards);
+    setUtttSmallWinners(nextSmallWinners);
+
+    const targetResult = nextSmallWinners[cellIndex];
+    setUtttTargetBoard(targetResult === null ? cellIndex : null);
+
+    setUtttTurn((previous) => (previous === "X" ? "O" : "X"));
+  }
+
+  const ultimateForcedBoardStillOpen = utttTargetBoard !== null && utttSmallWinners[utttTargetBoard] === null;
+
   return (
     <main className="min-h-screen px-6 py-10">
       <Heartbeat />
@@ -439,7 +562,7 @@ export default function SpielePage() {
         <section className="rounded-xl border border-slate-700 bg-card p-5">
           <h2 className="text-xl font-semibold">Spielesammlung</h2>
           <p className="mt-1 text-sm text-slate-300">Wähle ein Spiel aus. Alle Spiele laufen lokal direkt im Browser.</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {gameTabs.map((tab) => (
               <button
                 key={tab.key}
@@ -496,13 +619,16 @@ export default function SpielePage() {
             <p className="mt-1 text-sm text-slate-300">Steuerung mit Pfeiltasten oder Touch-Buttons. Futter sammeln erhöht den Score.</p>
 
             <div className="mt-4 space-y-3">
-              <p className="text-sm text-slate-200">Score: {snakeScore}</p>
+              <div className="flex flex-wrap gap-3 text-sm">
+                <p className="rounded-md bg-slate-900 px-3 py-1 text-slate-100">Score: <span className="font-semibold">{snakeScore}</span></p>
+                <p className="rounded-md bg-slate-900 px-3 py-1 text-slate-100">Bestscore: <span className="font-semibold text-emerald-300">{snakeBestScore}</span></p>
+              </div>
               <p className="text-sm text-slate-300">
                 {snakeGameOver ? "Game Over. Starte neu, um weiterzuspielen." : snakeRunning ? "Läuft..." : "Bereit. Starte das Spiel."}
               </p>
 
               <div
-                className="grid w-full max-w-[420px] gap-0.5 rounded-lg border border-slate-700 bg-slate-800 p-2"
+                className="grid w-full max-w-[440px] gap-0.5 rounded-lg border border-slate-700 bg-slate-800 p-2"
                 style={{ gridTemplateColumns: `repeat(${snakeBoardSize}, minmax(0, 1fr))` }}
               >
                 {Array.from({ length: snakeBoardSize * snakeBoardSize }, (_, index) => {
@@ -529,12 +655,12 @@ export default function SpielePage() {
                 })}
               </div>
 
-              <div className="grid w-full max-w-[220px] grid-cols-3 gap-2 md:hidden">
+              <div className="grid w-full max-w-[280px] grid-cols-3 gap-2 md:hidden">
                 <div />
                 <button
                   type="button"
                   onClick={() => queueSnakeDirection("up")}
-                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-accent"
+                  className="min-h-12 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-xl text-slate-200 active:scale-[0.98]"
                 >
                   ↑
                 </button>
@@ -542,27 +668,27 @@ export default function SpielePage() {
                 <button
                   type="button"
                   onClick={() => queueSnakeDirection("left")}
-                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-accent"
+                  className="min-h-12 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-xl text-slate-200 active:scale-[0.98]"
                 >
                   ←
                 </button>
                 <button
                   type="button"
                   onClick={() => queueSnakeDirection("down")}
-                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-accent"
+                  className="min-h-12 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-xl text-slate-200 active:scale-[0.98]"
                 >
                   ↓
                 </button>
                 <button
                   type="button"
                   onClick={() => queueSnakeDirection("right")}
-                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:border-accent"
+                  className="min-h-12 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-xl text-slate-200 active:scale-[0.98]"
                 >
                   →
                 </button>
               </div>
 
-              <p className="text-xs text-slate-400 md:hidden">Touch-Steuerung: Tippe auf die Pfeil-Buttons.</p>
+              <p className="text-xs text-slate-400 md:hidden">Touch-Steuerung: Tippe auf die Pfeil-Buttons (eine Richtungsänderung pro Tick).</p>
 
               <div className="flex flex-wrap gap-2">
                 <button
@@ -605,40 +731,147 @@ export default function SpielePage() {
               ))}
             </div>
 
-            <p className="mt-3 text-sm text-slate-200">
-              Schwierigkeit: {currentMineSettings.label} ({currentMineSettings.size}×{currentMineSettings.size}, {currentMineSettings.mines} Minen)
-            </p>
-            <p className="mt-1 text-sm text-slate-300">Verbleibende Minen (geschätzt): {remainingMines}</p>
-            <p className="mt-1 text-sm text-slate-200">
-              {mineGameOver ? "Verloren: Du hast eine Mine geöffnet." : mineWon ? "Gewonnen: Alle sicheren Felder sind aufgedeckt." : "Spiel läuft."}
-            </p>
+            <div className="mt-4 grid gap-2 rounded-lg border border-slate-700 bg-slate-900/60 p-3 text-sm md:grid-cols-2">
+              <p className="text-slate-200">
+                Schwierigkeit: <span className="font-semibold">{currentMineSettings.label}</span> ({currentMineSettings.size}×{currentMineSettings.size})
+              </p>
+              <p className="text-slate-300">Minen gesamt: {currentMineSettings.mines}</p>
+              <p className="text-slate-300">Gesetzte Flags: {flaggedCount}</p>
+              <p className="text-slate-300">Rest (geschätzt): {remainingMines}</p>
+              <p className="md:col-span-2 text-slate-200">
+                {mineGameOver ? "Verloren: Du hast eine Mine geöffnet." : mineWon ? "Gewonnen: Alle sicheren Felder sind aufgedeckt." : "Spiel läuft."}
+              </p>
+            </div>
 
-            <div
-              className="mt-4 grid w-full max-w-[560px] gap-1"
-              style={{ gridTemplateColumns: `repeat(${currentMineSettings.size}, minmax(0, 1fr))` }}
-            >
-              {mineBoard.map((row, rowIndex) =>
-                row.map((cell, colIndex) => {
-                  const content = cell.isOpen ? (cell.isMine ? "💣" : cell.neighborMines === 0 ? "" : cell.neighborMines) : cell.isFlagged ? "🚩" : "";
+            <div className="mt-4 overflow-x-auto pb-1">
+              <div
+                className="grid min-w-[320px] gap-1 rounded-lg border border-slate-700 bg-slate-800 p-2"
+                style={{
+                  gridTemplateColumns: `repeat(${currentMineSettings.size}, minmax(0, 1fr))`,
+                  width: `${Math.max(320, currentMineSettings.size * 34)}px`
+                }}
+              >
+                {mineBoard.map((row, rowIndex) =>
+                  row.map((cell, colIndex) => {
+                    const content = cell.isOpen ? (cell.isMine ? "💣" : cell.neighborMines === 0 ? "" : cell.neighborMines) : cell.isFlagged ? "🚩" : "";
 
-                  return (
-                    <button
-                      key={`${rowIndex}-${colIndex}`}
-                      type="button"
-                      onClick={() => openMinesweeperCell(rowIndex, colIndex)}
-                      onContextMenu={(event) => toggleMineFlag(event, rowIndex, colIndex)}
-                      className={`aspect-square rounded border text-xs font-semibold sm:text-sm ${
-                        cell.isOpen ? "border-slate-700 bg-slate-900 text-slate-100" : "border-slate-700 bg-slate-800 text-slate-100 hover:border-accent"
-                      }`}
-                    >
-                      {content}
-                    </button>
-                  );
-                })
-              )}
+                    return (
+                      <button
+                        key={`${rowIndex}-${colIndex}`}
+                        type="button"
+                        onClick={() => openMinesweeperCell(rowIndex, colIndex)}
+                        onContextMenu={(event) => toggleMineFlag(event, rowIndex, colIndex)}
+                        className={`aspect-square rounded border text-xs font-semibold sm:text-sm ${
+                          cell.isOpen ? "border-slate-700 bg-slate-900 text-slate-100" : "border-slate-700 bg-slate-700/70 text-slate-100 hover:border-accent"
+                        }`}
+                      >
+                        {content}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
             <button type="button" onClick={() => resetMinesweeper()} className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-accent">
+              Neustart
+            </button>
+          </section>
+        ) : null}
+
+        {activeGame === "ultimate" ? (
+          <section className="rounded-xl border border-slate-700 bg-card p-6">
+            <h3 className="text-xl font-semibold">Ultimate Tic-Tac-Toe</h3>
+            <p className="mt-1 text-sm text-slate-300">
+              Du spielst in einem kleinen 3×3-Feld. Das gewählte Feld (Position 1-9) bestimmt, in welches kleine Feld der nächste Zug muss.
+              Ist dieses Ziel-Feld bereits gewonnen oder voll, darf frei gewählt werden.
+            </p>
+
+            <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-3 text-sm">
+              <p className="text-slate-200">
+                {ultimateWinner
+                  ? `Gesamtsieg: ${ultimateWinner} gewinnt Ultimate Tic-Tac-Toe.`
+                  : ultimateDraw
+                    ? "Unentschieden: Alle kleinen Felder sind abgeschlossen."
+                    : `Am Zug: ${utttTurn}`}
+              </p>
+              <p className="mt-1 text-slate-300">
+                {ultimateWinner || ultimateDraw
+                  ? "Spiel beendet."
+                  : ultimateForcedBoardStillOpen
+                    ? `Nächstes Ziel-Feld: ${utttTargetBoard! + 1}`
+                    : "Nächstes Ziel-Feld: frei wählbar"}
+              </p>
+            </div>
+
+            <div className="mt-4 overflow-x-auto pb-1">
+              <div className="grid min-w-[360px] grid-cols-3 gap-2 rounded-lg border border-slate-700 bg-slate-800 p-2 sm:min-w-[540px]">
+                {utttBoards.map((smallBoard, boardIndex) => {
+                  const smallWinner = utttSmallWinners[boardIndex];
+                  const isActiveTarget =
+                    !ultimateWinner &&
+                    !ultimateDraw &&
+                    (ultimateForcedBoardStillOpen ? boardIndex === utttTargetBoard : smallWinner === null);
+
+                  return (
+                    <div
+                      key={boardIndex}
+                      className={`rounded-md border p-1 ${
+                        smallWinner === "X"
+                          ? "border-blue-400 bg-blue-950/30"
+                          : smallWinner === "O"
+                            ? "border-rose-400 bg-rose-950/30"
+                            : smallWinner === "draw"
+                              ? "border-slate-500 bg-slate-900/70"
+                              : isActiveTarget
+                                ? "border-accent bg-slate-900"
+                                : "border-slate-700 bg-slate-900/70"
+                      }`}
+                    >
+                      <div className="grid grid-cols-3 gap-1">
+                        {smallBoard.map((cell, cellIndex) => (
+                          <button
+                            key={`${boardIndex}-${cellIndex}`}
+                            type="button"
+                            onClick={() => playUltimateCell(boardIndex, cellIndex)}
+                            disabled={
+                              !!ultimateWinner ||
+                              ultimateDraw ||
+                              cell !== null ||
+                              smallWinner !== null ||
+                              (ultimateForcedBoardStillOpen && boardIndex !== utttTargetBoard)
+                            }
+                            className={`aspect-square rounded border text-lg font-bold sm:text-xl ${
+                              cell === "X"
+                                ? "text-blue-300"
+                                : cell === "O"
+                                  ? "text-rose-300"
+                                  : "text-slate-200"
+                            } ${
+                              smallWinner !== null
+                                ? "border-slate-700 bg-slate-900/80"
+                                : "border-slate-700 bg-slate-900 hover:border-accent disabled:cursor-not-allowed disabled:opacity-70"
+                            }`}
+                          >
+                            {cell ?? ""}
+                          </button>
+                        ))}
+                      </div>
+
+                      <p className="mt-1 text-center text-[11px] text-slate-300">
+                        Feld {boardIndex + 1}: {smallWinner === "X" ? "X gewonnen" : smallWinner === "O" ? "O gewonnen" : smallWinner === "draw" ? "Unentschieden" : "offen"}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={resetUltimateTicTacToe}
+              className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-accent"
+            >
               Neustart
             </button>
           </section>
