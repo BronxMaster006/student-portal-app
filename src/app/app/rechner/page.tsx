@@ -57,7 +57,7 @@ export default function RechnerPage() {
 
   const gradesAverage = useMemo(() => {
     const values = gradesInput
-      .split(/[,;\n\s]+/)
+      .split(/[;\n\s]+/)
       .map((entry) => parseNumber(entry))
       .filter((entry): entry is number => entry !== null);
 
@@ -92,27 +92,27 @@ export default function RechnerPage() {
 
             <div className="mt-4 space-y-4">
               <div className="rounded-lg border border-slate-700 p-4">
-                <p className="mb-2 text-sm font-medium">1) Prozentwert: W% von G</p>
+                <p className="mb-2 text-sm font-medium">1) Prozentwert (W): p % von Grundwert (G)</p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <input value={percentW} onChange={(event) => setPercentW(event.target.value)} placeholder="W in %" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
+                  <input value={percentW} onChange={(event) => setPercentW(event.target.value)} placeholder="p in % (Prozentsatz)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
                   <input value={percentG} onChange={(event) => setPercentG(event.target.value)} placeholder="G (Grundwert)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <p className="mt-2 text-sm text-slate-300">Ergebnis: <span className="font-semibold text-white">{percentValue !== null ? percentValue.toLocaleString("de-DE", { maximumFractionDigits: 2 }) : "-"}</span></p>
               </div>
 
               <div className="rounded-lg border border-slate-700 p-4">
-                <p className="mb-2 text-sm font-medium">2) Prozentsatz: W von G sind wie viel %</p>
+                <p className="mb-2 text-sm font-medium">2) Prozentsatz (p): Prozentwert (W) von Grundwert (G)</p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <input value={rateW} onChange={(event) => setRateW(event.target.value)} placeholder="W (Teilwert)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
+                  <input value={rateW} onChange={(event) => setRateW(event.target.value)} placeholder="W (Prozentwert)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
                   <input value={rateG} onChange={(event) => setRateG(event.target.value)} placeholder="G (Grundwert)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <p className="mt-2 text-sm text-slate-300">Ergebnis: <span className="font-semibold text-white">{percentageRate !== null ? `${percentageRate.toLocaleString("de-DE", { maximumFractionDigits: 2 })} %` : "-"}</span></p>
               </div>
 
               <div className="rounded-lg border border-slate-700 p-4">
-                <p className="mb-2 text-sm font-medium">3) Grundwert: W sind p% von ?</p>
+                <p className="mb-2 text-sm font-medium">3) Grundwert (G): Prozentwert (W) sind p % von G</p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <input value={baseW} onChange={(event) => setBaseW(event.target.value)} placeholder="W (Teilwert)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
+                  <input value={baseW} onChange={(event) => setBaseW(event.target.value)} placeholder="W (Prozentwert)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
                   <input value={baseP} onChange={(event) => setBaseP(event.target.value)} placeholder="p in %" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
                 </div>
                 <p className="mt-2 text-sm text-slate-300">Ergebnis: <span className="font-semibold text-white">{baseValue !== null ? baseValue.toLocaleString("de-DE", { maximumFractionDigits: 2 }) : "-"}</span></p>
@@ -127,20 +127,20 @@ export default function RechnerPage() {
             <p className="mt-1 text-sm text-slate-300">Gib mehrere Noten ein, der Durchschnitt wird automatisch berechnet.</p>
 
             <div className="mt-4 space-y-3">
-              <label className="text-sm text-slate-300">Noten (getrennt mit Komma, Semikolon, Leerzeichen oder Zeilenumbruch)</label>
+              <label className="text-sm text-slate-300">Noten (getrennt mit Semikolon, Leerzeichen oder Zeilenumbruch)</label>
               <textarea
                 value={gradesInput}
                 onChange={(event) => setGradesInput(event.target.value)}
                 rows={6}
                 className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent"
-                placeholder="z. B. 1,7; 2,3; 2,0"
+                placeholder="z. B. 1,7; 2,3; 2,0 oder je Zeile eine Note"
               />
               <p className="text-sm text-slate-300">
                 Durchschnitt: <span className="font-semibold text-white">{gradesAverage !== null ? gradesAverage.toLocaleString("de-DE", { maximumFractionDigits: 2 }) : "-"}</span>
               </p>
             </div>
 
-            <p className="mt-4 text-xs text-slate-400">Hinweis: Es werden nur gültige Zahlen berücksichtigt.</p>
+            <p className="mt-4 text-xs text-slate-400">Hinweis: Für Dezimalzahlen nutze ein Komma (z. B. 1,7).</p>
           </article>
         </section>
 
