@@ -61,6 +61,9 @@ model ActivityLog {
 
 model ErrorLog {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> test-codex-games
   id        String    @id @default(cuid())
   userId    String?
   user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -70,6 +73,7 @@ model ErrorLog {
 
   @@index([createdAt])
 }
+<<<<<<< HEAD
 =======
   id        String   @id @default(cuid())
   userId    String?
@@ -81,3 +85,5 @@ model ErrorLog {
   @@index([createdAt])
 }
 >>>>>>> main
+=======
+>>>>>>> test-codex-games

@@ -7,19 +7,11 @@ export default auth((req) => {
   const pathname = req.nextUrl.pathname;
 
   if (pathname === "/") {
-    return NextResponse.redirect(new URL(isLoggedIn ? "/app" : "/login", req.url));
+    return NextResponse.redirect(
+      new URL(isLoggedIn ? "/app" : "/login", req.url)
+    );
   }
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-  if (["/app", "/admin"].includes(pathname) && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  if (pathname === "/admin" && role !== "ADMIN") {
-=======
->>>>>>> main
   const isAppRoute = pathname === "/app" || pathname.startsWith("/app/");
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
 
@@ -28,10 +20,6 @@ export default auth((req) => {
   }
 
   if (isAdminRoute && role !== "ADMIN") {
-<<<<<<< HEAD
-=======
->>>>>>> codex-new
->>>>>>> main
     return NextResponse.redirect(new URL("/app", req.url));
   }
 
@@ -43,13 +31,5 @@ export default auth((req) => {
 });
 
 export const config = {
-<<<<<<< HEAD
-  matcher: ["/", "/login", "/register", "/app/:path*", "/admin/:path*"]
-=======
-<<<<<<< HEAD
-  matcher: ["/", "/login", "/register", "/app", "/admin"]
-=======
-  matcher: ["/", "/login", "/register", "/app/:path*", "/admin/:path*"]
->>>>>>> codex-new
->>>>>>> main
+  matcher: ["/", "/login", "/register", "/app/:path*", "/admin/:path*"],
 };
