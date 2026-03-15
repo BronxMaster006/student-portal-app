@@ -19,6 +19,7 @@ type CellMeta = {
 };
 
 const BOARD_SIZE = 13;
+const MAX_HOUSE_ROLL_ATTEMPTS = 3;
 
 const ludoColors: LudoColor[] = ["rot", "blau", "gruen", "gelb"];
 
@@ -343,20 +344,25 @@ export function MenschAergereDichNichtGame() {
 
     if (movable.length === 0) {
       if (allPiecesInHouse) {
-        const nextAttempts = rollAttempts + 1;
-        setRollAttempts(nextAttempts);
+        setRollAttempts((previousAttempts) => {
+          const nextAttempts = previousAttempts + 1;
 
-        if (nextAttempts < 3) {
-          setStatusText(`${ludoColorLabel[activePlayer]} hat keine 6 gewürfelt (${nextAttempts}/3). Erneut würfeln.`);
-          return;
-        }
+          if (nextAttempts < MAX_HOUSE_ROLL_ATTEMPTS) {
+            setStatusText(
+              `${ludoColorLabel[activePlayer]} hat keine 6 gewürfelt (${nextAttempts}/${MAX_HOUSE_ROLL_ATTEMPTS}). Erneut würfeln.`
+            );
+            return nextAttempts;
+          }
 
-        const next = nextColor(activePlayer);
-        setActivePlayer(next);
-        setDiceValue(null);
-        setCanMove(false);
-        setRollAttempts(0);
-        setStatusText(`${ludoColorLabel[activePlayer]} hatte drei Versuche ohne 6. ${ludoColorLabel[next]} ist am Zug.`);
+          const next = nextColor(activePlayer);
+          setActivePlayer(next);
+          setDiceValue(null);
+          setCanMove(false);
+          setStatusText(
+            `${ludoColorLabel[activePlayer]} hatte ${MAX_HOUSE_ROLL_ATTEMPTS} Versuche ohne 6. ${ludoColorLabel[next]} ist am Zug.`
+          );
+          return 0;
+        });
         return;
       }
 
@@ -482,7 +488,7 @@ export function MenschAergereDichNichtGame() {
       <div className="mt-4 grid gap-3 rounded-lg border border-slate-700 bg-slate-900/60 p-3 text-sm md:grid-cols-2">
         <p className="text-slate-200">Aktiver Spieler: <span className="font-semibold">{ludoColorLabel[activePlayer]}</span></p>
         <p className="text-slate-300">Würfel: {diceValue ?? "-"}</p>
-        <p className="text-slate-300">Haus-Versuche: {allPiecesInHouse ? `${rollAttempts}/3` : "-"}</p>
+        <p className="text-slate-300">Haus-Versuche: {allPiecesInHouse ? `${rollAttempts}/${MAX_HOUSE_ROLL_ATTEMPTS}` : "-"}</p>
         <p className="md:col-span-2 text-slate-200">{statusText}</p>
       </div>
 
