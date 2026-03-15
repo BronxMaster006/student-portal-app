@@ -266,6 +266,9 @@ export function MenschAergereDichNichtGame() {
   const [canMove, setCanMove] = useState(false);
   const [winner, setWinner] = useState<LudoColor | null>(null);
   const [statusText, setStatusText] = useState("Würfle, um zu starten.");
+  const [rollAttempts, setRollAttempts] = useState(0);
+
+  const allPiecesInHouse = useMemo(() => ludoState[activePlayer].every((piece) => piece.position === -1), [activePlayer, ludoState]);
 
   const movablePieceIndices = useMemo(() => {
     if (diceValue === null || winner) {
@@ -316,21 +319,15 @@ export function MenschAergereDichNichtGame() {
     setCanMove(false);
     setWinner(null);
     setStatusText("Würfle, um zu starten.");
+    setRollAttempts(0);
   }
 
-  function passToNextPlayer(currentPlayer: LudoColor, rolledSix: boolean) {
-    if (rolledSix) {
-      setStatusText(`${ludoColorLabel[currentPlayer]} hat eine 6 gewürfelt und darf erneut würfeln.`);
-      setActivePlayer(currentPlayer);
-      setDiceValue(null);
-      setCanMove(false);
-      return;
-    }
-
+  function passToNextPlayer(currentPlayer: LudoColor) {
     const next = nextColor(currentPlayer);
     setActivePlayer(next);
     setDiceValue(null);
     setCanMove(false);
+    setRollAttempts(0);
     setStatusText(`Keine Zugmöglichkeit. ${ludoColorLabel[next]} ist am Zug.`);
   }
 
@@ -345,11 +342,30 @@ export function MenschAergereDichNichtGame() {
     setDiceValue(rolled);
 
     if (movable.length === 0) {
-      passToNextPlayer(activePlayer, rolled === 6);
+      if (allPiecesInHouse) {
+        const nextAttempts = rollAttempts + 1;
+        setRollAttempts(nextAttempts);
+
+        if (nextAttempts < 3) {
+          setStatusText(`${ludoColorLabel[activePlayer]} hat keine 6 gewürfelt (${nextAttempts}/3). Erneut würfeln.`);
+          return;
+        }
+
+        const next = nextColor(activePlayer);
+        setActivePlayer(next);
+        setDiceValue(null);
+        setCanMove(false);
+        setRollAttempts(0);
+        setStatusText(`${ludoColorLabel[activePlayer]} hatte drei Versuche ohne 6. ${ludoColorLabel[next]} ist am Zug.`);
+        return;
+      }
+
+      passToNextPlayer(activePlayer);
       return;
     }
 
     setCanMove(true);
+    setRollAttempts(0);
     setStatusText(`${ludoColorLabel[activePlayer]} hat ${rolled} gewürfelt. Wähle eine markierte Figur.`);
   }
 
@@ -418,6 +434,7 @@ export function MenschAergereDichNichtGame() {
 
       setCanMove(false);
       setDiceValue(null);
+      setRollAttempts(0);
 
       return nextState;
     });
@@ -465,6 +482,7 @@ export function MenschAergereDichNichtGame() {
       <div className="mt-4 grid gap-3 rounded-lg border border-slate-700 bg-slate-900/60 p-3 text-sm md:grid-cols-2">
         <p className="text-slate-200">Aktiver Spieler: <span className="font-semibold">{ludoColorLabel[activePlayer]}</span></p>
         <p className="text-slate-300">Würfel: {diceValue ?? "-"}</p>
+        <p className="text-slate-300">Haus-Versuche: {allPiecesInHouse ? `${rollAttempts}/3` : "-"}</p>
         <p className="md:col-span-2 text-slate-200">{statusText}</p>
       </div>
 
