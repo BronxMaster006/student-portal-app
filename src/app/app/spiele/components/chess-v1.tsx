@@ -575,17 +575,18 @@ export function ChessV1Game() {
             const isDark = (row + col) % 2 === 1;
             const isSelected = selected?.row === row && selected?.col === col;
             const isLegal = legalTargets.some((move) => move.to.row === row && move.to.col === col);
+            const pieceColorClass = piece?.color === "w" ? "text-blue-500" : piece?.color === "b" ? "text-red-500" : "";
 
             return (
               <button
                 key={`${row}-${col}`}
                 type="button"
                 onClick={() => handleSquareClick(row, col)}
-                className={`relative aspect-square border text-2xl sm:text-3xl ${
+                className={`relative aspect-square border text-3xl font-bold leading-none sm:text-4xl ${
                   isDark ? "border-slate-700 bg-slate-700/70" : "border-slate-700 bg-slate-200 text-slate-900"
                 } ${isSelected ? "outline outline-2 outline-accent" : ""}`}
               >
-                {piece ? pieceSymbol(piece) : ""}
+                <span className={`drop-shadow-[0_0_2px_rgba(0,0,0,0.8)] ${pieceColorClass}`}>{piece ? pieceSymbol(piece) : ""}</span>
                 {isLegal ? <span className="pointer-events-none absolute inset-0 m-auto h-3 w-3 rounded-full bg-accent/80" /> : null}
               </button>
             );
