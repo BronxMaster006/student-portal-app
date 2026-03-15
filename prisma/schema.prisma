@@ -60,21 +60,6 @@ model ActivityLog {
 }
 
 model ErrorLog {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> test-codex-games
-  id        String    @id @default(cuid())
-  userId    String?
-  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  route     String?
-  message   String
-  createdAt DateTime  @default(now())
-
-  @@index([createdAt])
-}
-<<<<<<< HEAD
-=======
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -84,6 +69,3 @@ model ErrorLog {
 
   @@index([createdAt])
 }
->>>>>>> main
-=======
->>>>>>> test-codex-games
