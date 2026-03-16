@@ -13,13 +13,20 @@ export async function loginAction(_: LoginState, formData: FormData): Promise<Lo
     await signIn("credentials", {
       firstName,
       password,
-      redirectTo: "/app"
+      redirectTo: "/app",
     });
+
     return {};
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+
     if (error instanceof AuthError) {
       return { error: "Anmeldung fehlgeschlagen. Bitte Daten prüfen." };
     }
-    return { error: "Unbekannter Fehler bei der Anmeldung." };
+
+    console.error("LOGIN ACTION ERROR:", error);
+    return { error: "Serverfehler bei der Anmeldung." };
   }
 }
