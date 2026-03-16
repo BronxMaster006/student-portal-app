@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ActivityType } from "@prisma/client";
 import { Heartbeat } from "@/components/heartbeat";
 import { LogoutButton } from "@/components/logout-button";
@@ -10,9 +11,15 @@ import { prisma } from "@/lib/prisma";
 export default async function AdminPage() {
   const session = await auth();
 
-  if (session?.user?.id) {
-    await logActivity(session.user.id, ActivityType.ADMIN_VIEW, "Admin-Dashboard geöffnet");
+  if (!session?.user) {
+    redirect("/login");
   }
+
+  if (session.user.role !== "ADMIN") {
+    redirect("/app");
+  }
+
+  await logActivity(session.user.id, ActivityType.ADMIN_VIEW, "Admin-Dashboard geöffnet");
 
   const [users, activities, errors] = await Promise.all([
     prisma.user.findMany({
@@ -63,7 +70,7 @@ export default async function AdminPage() {
             lastSeenAt: user.lastSeenAt ? user.lastSeenAt.toISOString() : null,
             lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,
           }))}
-          currentUserId={session?.user?.id}
+          currentUserId={session.user.id}
         />
 
         <section className="grid gap-6 lg:grid-cols-2">
