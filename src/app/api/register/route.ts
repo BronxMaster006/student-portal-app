@@ -19,20 +19,20 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       const message = parsed.error.issues[0]?.message ?? "Ungültige Eingabedaten.";
       await logError(`Registrierung fehlgeschlagen: ${message}`, "/register");
-      return NextResponse.json({ error: message }, { status: 400 });
+      return NextResponse.json({ ok: false, error: message }, { status: 400 });
     }
 
     const { firstName, password, inviteCode } = parsed.data;
 
     if (inviteCode !== process.env.INVITE_CODE_SECRET) {
       await logError("Registrierung fehlgeschlagen: Falscher Invite-Code", "/register");
-      return NextResponse.json({ error: "Der Invite-Code ist ungültig." }, { status: 403 });
+      return NextResponse.json({ ok: false, error: "Der Invite-Code ist ungültig." }, { status: 403 });
     }
 
     const existingUser = await prisma.user.findUnique({ where: { firstName } });
     if (existingUser) {
       await logError("Registrierung fehlgeschlagen: Vorname bereits vergeben", "/register", existingUser.id);
-      return NextResponse.json({ error: "Dieser Vorname ist bereits vergeben." }, { status: 409 });
+      return NextResponse.json({ ok: false, error: "Dieser Vorname ist bereits vergeben." }, { status: 409 });
     }
 
     const hash = await bcrypt.hash(password, 12);
@@ -50,10 +50,10 @@ export async function POST(request: Request) {
 
     await logActivity(created.id, ActivityType.REGISTER_SUCCESS, "Registrierung erfolgreich");
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, data: { id: created.id } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unbekannter Fehler";
     await logError(`Serverfehler bei Registrierung: ${message}`, "/register");
-    return NextResponse.json({ error: "Serverfehler bei der Registrierung." }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "Serverfehler bei der Registrierung." }, { status: 500 });
   }
 }

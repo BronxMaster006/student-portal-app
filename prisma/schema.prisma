@@ -19,6 +19,9 @@ enum ActivityType {
   REGISTER_FAILED
   HEARTBEAT
   ADMIN_VIEW
+  USER_DEACTIVATED
+  INFO_POST_EDITED
+  INFO_POST_DELETED
 }
 
 model User {
@@ -60,12 +63,12 @@ model ActivityLog {
 }
 
 model ErrorLog {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   route     String?
   message   String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([createdAt])
 }

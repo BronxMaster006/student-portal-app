@@ -3,15 +3,18 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Toast } from "@/components/toast";
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   async function onSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     const payload = {
       firstName: String(formData.get("firstName") ?? ""),
@@ -25,14 +28,15 @@ export default function RegisterPage() {
       body: JSON.stringify(payload)
     });
 
-    const data = (await response.json()) as { error?: string };
+    const data = (await response.json().catch(() => ({ ok: false, error: "Ungültige Serverantwort." }))) as { ok?: boolean; error?: string };
 
-    if (!response.ok) {
+    if (!response.ok || !data.ok) {
       setError(data.error ?? "Registrierung fehlgeschlagen.");
       setLoading(false);
       return;
     }
 
+    setSuccess("Registrierung erfolgreich. Weiterleitung zum Login...");
     router.push("/login");
   }
 
@@ -68,7 +72,8 @@ export default function RegisterPage() {
               required
             />
           </div>
-          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          {error ? <Toast message={error} type="error" /> : null}
+          {success ? <Toast message={success} type="success" /> : null}
           <button disabled={loading} className="w-full rounded-lg bg-accent p-3 font-medium text-white transition hover:opacity-90">
             {loading ? "Registrierung läuft..." : "Registrieren"}
           </button>

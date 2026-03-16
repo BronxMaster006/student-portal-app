@@ -10,7 +10,7 @@ export async function POST() {
     const userId = session?.user?.id;
 
     if (!userId) {
-      return NextResponse.json({ ok: false }, { status: 401 });
+      return NextResponse.json({ ok: false, error: "Nicht autorisiert." }, { status: 401 });
     }
 
     await prisma.user.update({
@@ -24,6 +24,6 @@ export async function POST() {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unbekannter Fehler";
     await logError(`Heartbeat-Fehler: ${message}`, "/api/heartbeat");
-    return NextResponse.json({ ok: false }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "Serverfehler beim Heartbeat." }, { status: 500 });
   }
 }

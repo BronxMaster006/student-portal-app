@@ -1,16 +1,10 @@
 "use client";
 
 import Link from "next/link";
-<<<<<<< HEAD
 import { useEffect, useState } from "react";
-=======
-import { useState } from "react";
->>>>>>> main
 import { Heartbeat } from "@/components/heartbeat";
+import { Toast } from "@/components/toast";
 
-type ApiResponse = { error?: string; ok?: boolean };
-
-<<<<<<< HEAD
 type InfoPost = {
   id: string;
   title: string;
@@ -18,18 +12,18 @@ type InfoPost = {
   createdAt: string;
 };
 
-type InfoListResponse = {
-  posts?: InfoPost[];
+type ApiResponse = {
+  ok: boolean;
   error?: string;
+  data?: {
+    posts?: InfoPost[];
+  };
 };
 
-=======
->>>>>>> main
 export default function AdminInfoPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-<<<<<<< HEAD
   const [posts, setPosts] = useState<InfoPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
@@ -38,24 +32,31 @@ export default function AdminInfoPage() {
 
   async function loadPosts() {
     setLoadingPosts(true);
-    const response = await fetch("/api/info", { cache: "no-store" });
-    const data = (await response.json()) as InfoListResponse;
 
-    if (!response.ok) {
-      setError(data.error ?? "Beiträge konnten nicht geladen werden.");
+    try {
+      const response = await fetch("/api/info", { cache: "no-store" });
+      const data = (await response.json().catch(() => ({
+        ok: false,
+        error: "Ungültige Serverantwort.",
+      }))) as ApiResponse;
+
+      if (!response.ok || !data.ok) {
+        setError(data.error ?? "Beiträge konnten nicht geladen werden.");
+        setLoadingPosts(false);
+        return;
+      }
+
+      setPosts(data.data?.posts ?? []);
       setLoadingPosts(false);
-      return;
+    } catch {
+      setError("Netzwerkfehler beim Laden der Beiträge.");
+      setLoadingPosts(false);
     }
-
-    setPosts(data.posts ?? []);
-    setLoadingPosts(false);
   }
 
   useEffect(() => {
     void loadPosts();
   }, []);
-=======
->>>>>>> main
 
   async function onSubmit(formData: FormData) {
     setLoading(true);
@@ -64,27 +65,34 @@ export default function AdminInfoPage() {
 
     const payload = {
       title: String(formData.get("title") ?? ""),
-      content: String(formData.get("content") ?? "")
+      content: String(formData.get("content") ?? ""),
     };
 
-    const response = await fetch("/api/info", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    try {
+      const response = await fetch("/api/info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    const data = (await response.json()) as ApiResponse;
+      const data = (await response.json().catch(() => ({
+        ok: false,
+        error: "Ungültige Serverantwort.",
+      }))) as ApiResponse;
 
-    if (!response.ok) {
-      setError(data.error ?? "Speichern fehlgeschlagen.");
+      if (!response.ok || !data.ok) {
+        setError(data.error ?? "Fehler beim Speichern");
+        setLoading(false);
+        return;
+      }
+
+      setSuccess("Post erfolgreich gespeichert");
       setLoading(false);
-      return;
+      await loadPosts();
+    } catch {
+      setError("Netzwerkfehler beim Speichern.");
+      setLoading(false);
     }
-
-    setSuccess("Beitrag wurde veröffentlicht.");
-    setLoading(false);
-<<<<<<< HEAD
-    await loadPosts();
   }
 
   function startEdit(post: InfoPost) {
@@ -99,22 +107,29 @@ export default function AdminInfoPage() {
     setError(null);
     setSuccess(null);
 
-    const response = await fetch(`/api/info/${postId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: editTitle, content: editContent })
-    });
+    try {
+      const response = await fetch(`/api/info/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editTitle, content: editContent }),
+      });
 
-    const data = (await response.json()) as ApiResponse;
+      const data = (await response.json().catch(() => ({
+        ok: false,
+        error: "Ungültige Serverantwort.",
+      }))) as ApiResponse;
 
-    if (!response.ok) {
-      setError(data.error ?? "Aktualisierung fehlgeschlagen.");
-      return;
+      if (!response.ok || !data.ok) {
+        setError(data.error ?? "Fehler beim Speichern");
+        return;
+      }
+
+      setSuccess("Post erfolgreich gespeichert");
+      setEditingPostId(null);
+      await loadPosts();
+    } catch {
+      setError("Netzwerkfehler beim Speichern.");
     }
-
-    setSuccess("Beitrag wurde aktualisiert.");
-    setEditingPostId(null);
-    await loadPosts();
   }
 
   async function deletePost(postId: string) {
@@ -125,21 +140,26 @@ export default function AdminInfoPage() {
     setError(null);
     setSuccess(null);
 
-    const response = await fetch(`/api/info/${postId}`, {
-      method: "DELETE"
-    });
+    try {
+      const response = await fetch(`/api/info/${postId}`, {
+        method: "DELETE",
+      });
 
-    const data = (await response.json()) as ApiResponse;
+      const data = (await response.json().catch(() => ({
+        ok: false,
+        error: "Ungültige Serverantwort.",
+      }))) as ApiResponse;
 
-    if (!response.ok) {
-      setError(data.error ?? "Löschen fehlgeschlagen.");
-      return;
+      if (!response.ok || !data.ok) {
+        setError(data.error ?? "Fehler beim Löschen");
+        return;
+      }
+
+      setSuccess("Post erfolgreich gelöscht");
+      await loadPosts();
+    } catch {
+      setError("Netzwerkfehler beim Löschen.");
     }
-
-    setSuccess("Beitrag wurde gelöscht.");
-    await loadPosts();
-=======
->>>>>>> main
   }
 
   return (
@@ -148,17 +168,23 @@ export default function AdminInfoPage() {
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="flex items-center justify-between">
           <div>
-<<<<<<< HEAD
             <h1 className="text-3xl font-bold">Info-Posts verwalten</h1>
-=======
-            <h1 className="text-3xl font-bold">Info-Beitrag erstellen</h1>
->>>>>>> main
-            <p className="text-sm text-slate-300">Neue Hinweise für alle eingeloggten Nutzer veröffentlichen.</p>
+            <p className="text-sm text-slate-300">
+              {editingPostId
+                ? "Du bearbeitest gerade einen bestehenden Beitrag."
+                : "Neue Hinweise für alle eingeloggten Nutzer veröffentlichen."}
+            </p>
           </div>
-          <Link href="/admin" className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-accent">
+          <Link
+            href="/admin"
+            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-accent"
+          >
             Zurück
           </Link>
         </header>
+
+        {error ? <Toast message={error} type="error" /> : null}
+        {success ? <Toast message={success} type="success" /> : null}
 
         <section className="rounded-xl border border-slate-700 bg-card p-6">
           <form action={onSubmit} className="space-y-4">
@@ -179,10 +205,10 @@ export default function AdminInfoPage() {
                 required
               />
             </div>
-            {error ? <p className="text-sm text-red-300">{error}</p> : null}
-            {success ? <p className="text-sm text-emerald-300">{success}</p> : null}
-            <button disabled={loading} className="rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white hover:opacity-90">
-<<<<<<< HEAD
+            <button
+              disabled={loading}
+              className="rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white hover:opacity-90"
+            >
               {loading ? "Speichern..." : "Neuen Beitrag veröffentlichen"}
             </button>
           </form>
@@ -190,15 +216,25 @@ export default function AdminInfoPage() {
 
         <section className="rounded-xl border border-slate-700 bg-card p-6">
           <h2 className="mb-4 text-xl font-semibold">Bestehende Beiträge</h2>
-          {loadingPosts ? <p className="text-sm text-slate-300">Beiträge werden geladen...</p> : null}
-          {!loadingPosts && posts.length === 0 ? <p className="text-sm text-slate-300">Noch keine Beiträge vorhanden.</p> : null}
+          {loadingPosts ? (
+            <p className="text-sm text-slate-300">Laden...</p>
+          ) : null}
+          {!loadingPosts && posts.length === 0 ? (
+            <p className="text-sm text-slate-300">Noch keine Beiträge vorhanden.</p>
+          ) : null}
           <div className="space-y-4">
             {posts.map((post) => {
               const isEditing = editingPostId === post.id;
-              const preview = post.content.length > 160 ? `${post.content.slice(0, 160)}...` : post.content;
+              const preview =
+                post.content.length > 160
+                  ? `${post.content.slice(0, 160)}...`
+                  : post.content;
 
               return (
-                <article key={post.id} className="rounded-xl border border-slate-700 bg-slate-900/50 p-4">
+                <article
+                  key={post.id}
+                  className="rounded-xl border border-slate-700 bg-slate-900/50 p-4"
+                >
                   {isEditing ? (
                     <div className="space-y-3">
                       <p className="text-xs text-accent">Bearbeitungsmodus aktiv</p>
@@ -234,7 +270,9 @@ export default function AdminInfoPage() {
                     <div className="space-y-3">
                       <div>
                         <h3 className="text-lg font-semibold">{post.title}</h3>
-                        <p className="text-xs text-slate-400">Erstellt am {new Date(post.createdAt).toLocaleString("de-DE")}</p>
+                        <p className="text-xs text-slate-400">
+                          Erstellt am {new Date(post.createdAt).toLocaleString("de-DE")}
+                        </p>
                       </div>
                       <p className="text-sm text-slate-300">{preview}</p>
                       <div className="flex gap-2">
@@ -260,12 +298,6 @@ export default function AdminInfoPage() {
             })}
           </div>
         </section>
-=======
-              {loading ? "Speichern..." : "Beitrag veröffentlichen"}
-            </button>
-          </form>
-        </section>
->>>>>>> main
       </div>
     </main>
   );

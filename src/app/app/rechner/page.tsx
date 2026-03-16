@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 "use client";
 
 import { useMemo, useState } from "react";
@@ -132,46 +131,96 @@ export default function RechnerPage() {
         <section className="grid gap-6 lg:grid-cols-2">
           <article className="rounded-xl border border-slate-700 bg-card p-6">
             <h2 className="text-xl font-semibold">Prozentrechner</h2>
-            <p className="mt-1 text-sm text-slate-300">Berechne Prozentwert, Prozentsatz oder Grundwert.</p>
+            <p className="mt-1 text-sm text-slate-300">
+              Berechne Prozentwert, Prozentsatz oder Grundwert.
+            </p>
 
             <div className="mt-4 space-y-4">
               <div className="rounded-lg border border-slate-700 p-4">
-                <p className="mb-2 text-sm font-medium">1) Prozentwert (W): p % von Grundwert (G)</p>
+                <p className="mb-2 text-sm font-medium">
+                  1) Prozentwert (W): p % von Grundwert (G)
+                </p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <input value={percentW} onChange={(event) => setPercentW(event.target.value)} placeholder="p in % (Prozentsatz)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
-                  <input value={percentG} onChange={(event) => setPercentG(event.target.value)} placeholder="G (Grundwert)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
+                  <input
+                    value={percentW}
+                    onChange={(event) => setPercentW(event.target.value)}
+                    placeholder="p in % (Prozentsatz)"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent"
+                  />
+                  <input
+                    value={percentG}
+                    onChange={(event) => setPercentG(event.target.value)}
+                    placeholder="G (Grundwert)"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent"
+                  />
                 </div>
-                <p className="mt-2 text-sm text-slate-300">Ergebnis: <span className="font-semibold text-white">{percentValueText}</span></p>
+                <p className="mt-2 text-sm text-slate-300">
+                  Ergebnis: <span className="font-semibold text-white">{percentValueText}</span>
+                </p>
               </div>
 
               <div className="rounded-lg border border-slate-700 p-4">
-                <p className="mb-2 text-sm font-medium">2) Prozentsatz (p): Prozentwert (W) von Grundwert (G)</p>
+                <p className="mb-2 text-sm font-medium">
+                  2) Prozentsatz (p): Prozentwert (W) von Grundwert (G)
+                </p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <input value={rateW} onChange={(event) => setRateW(event.target.value)} placeholder="W (Prozentwert)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
-                  <input value={rateG} onChange={(event) => setRateG(event.target.value)} placeholder="G (Grundwert)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
+                  <input
+                    value={rateW}
+                    onChange={(event) => setRateW(event.target.value)}
+                    placeholder="W (Prozentwert)"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent"
+                  />
+                  <input
+                    value={rateG}
+                    onChange={(event) => setRateG(event.target.value)}
+                    placeholder="G (Grundwert)"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent"
+                  />
                 </div>
-                <p className="mt-2 text-sm text-slate-300">Ergebnis: <span className="font-semibold text-white">{percentageRateText}</span></p>
+                <p className="mt-2 text-sm text-slate-300">
+                  Ergebnis: <span className="font-semibold text-white">{percentageRateText}</span>
+                </p>
               </div>
 
               <div className="rounded-lg border border-slate-700 p-4">
-                <p className="mb-2 text-sm font-medium">3) Grundwert (G): Prozentwert (W) sind p % von G</p>
+                <p className="mb-2 text-sm font-medium">
+                  3) Grundwert (G): Prozentwert (W) sind p % von G
+                </p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <input value={baseW} onChange={(event) => setBaseW(event.target.value)} placeholder="W (Prozentwert)" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
-                  <input value={baseP} onChange={(event) => setBaseP(event.target.value)} placeholder="p in %" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
+                  <input
+                    value={baseW}
+                    onChange={(event) => setBaseW(event.target.value)}
+                    placeholder="W (Prozentwert)"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent"
+                  />
+                  <input
+                    value={baseP}
+                    onChange={(event) => setBaseP(event.target.value)}
+                    placeholder="p in %"
+                    className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent"
+                  />
                 </div>
-                <p className="mt-2 text-sm text-slate-300">Ergebnis: <span className="font-semibold text-white">{baseValueText}</span></p>
+                <p className="mt-2 text-sm text-slate-300">
+                  Ergebnis: <span className="font-semibold text-white">{baseValueText}</span>
+                </p>
               </div>
             </div>
 
-            <p className="mt-4 text-xs text-slate-400">Tipp: Du kannst Komma oder Punkt für Dezimalzahlen verwenden.</p>
+            <p className="mt-4 text-xs text-slate-400">
+              Tipp: Du kannst Komma oder Punkt für Dezimalzahlen verwenden.
+            </p>
           </article>
 
           <article className="rounded-xl border border-slate-700 bg-card p-6">
             <h2 className="text-xl font-semibold">Notenrechner</h2>
-            <p className="mt-1 text-sm text-slate-300">Gib mehrere Noten ein, der Durchschnitt wird automatisch berechnet.</p>
+            <p className="mt-1 text-sm text-slate-300">
+              Gib mehrere Noten ein, der Durchschnitt wird automatisch berechnet.
+            </p>
 
             <div className="mt-4 space-y-3">
-              <label className="text-sm text-slate-300">Noten (getrennt mit Semikolon, Leerzeichen oder Zeilenumbruch)</label>
+              <label className="text-sm text-slate-300">
+                Noten (getrennt mit Semikolon, Leerzeichen oder Zeilenumbruch)
+              </label>
               <textarea
                 value={gradesInput}
                 onChange={(event) => setGradesInput(event.target.value)}
@@ -184,35 +233,46 @@ export default function RechnerPage() {
               </p>
             </div>
 
-            <p className="mt-4 text-xs text-slate-400">Hinweis: Für Dezimalzahlen nutze ein Komma (z. B. 1,7).</p>
+            <p className="mt-4 text-xs text-slate-400">
+              Hinweis: Für Dezimalzahlen nutze ein Komma (z. B. 1,7).
+            </p>
           </article>
         </section>
 
         <section className="rounded-xl border border-slate-700 bg-card p-6">
           <h2 className="text-xl font-semibold">Dreisatz-Rechner</h2>
-          <p className="mt-1 text-sm text-slate-300">Nutze die Form: Wenn A zu B gehört, wie viel gehört dann zu C?</p>
+          <p className="mt-1 text-sm text-slate-300">
+            Nutze die Form: Wenn A zu B gehört, wie viel gehört dann zu C?
+          </p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <input value={ruleA} onChange={(event) => setRuleA(event.target.value)} placeholder="A" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
-            <input value={ruleB} onChange={(event) => setRuleB(event.target.value)} placeholder="B" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
-            <input value={ruleC} onChange={(event) => setRuleC(event.target.value)} placeholder="C" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent" />
+            <input
+              value={ruleA}
+              onChange={(event) => setRuleA(event.target.value)}
+              placeholder="A"
+              className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent"
+            />
+            <input
+              value={ruleB}
+              onChange={(event) => setRuleB(event.target.value)}
+              placeholder="B"
+              className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent"
+            />
+            <input
+              value={ruleC}
+              onChange={(event) => setRuleC(event.target.value)}
+              placeholder="C"
+              className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-accent"
+            />
           </div>
 
-          <p className="mt-3 text-sm text-slate-300">Ergebnis X: <span className="font-semibold text-white">{ruleOfThreeText}</span></p>
-          <p className="mt-2 text-xs text-slate-400">Formel: X = (B × C) / A. A darf nicht 0 sein.</p>
+          <p className="mt-3 text-sm text-slate-300">
+            Ergebnis X: <span className="font-semibold text-white">{ruleOfThreeText}</span>
+          </p>
+          <p className="mt-2 text-xs text-slate-400">
+            Formel: X = (B × C) / A. A darf nicht 0 sein.
+          </p>
         </section>
-=======
-import { Heartbeat } from "@/components/heartbeat";
-import { AppHeader } from "@/components/app-header";
-
-export default function RechnerPage() {
-  return (
-    <main className="min-h-screen px-6 py-10">
-      <Heartbeat />
-      <div className="mx-auto max-w-3xl rounded-xl border border-slate-700 bg-card p-6">
-        <AppHeader title="Mathe-Rechner" />
-        <p className="text-slate-300">Dieser Bereich ist als Platzhalter vorbereitet. Hier folgen später Rechentools.</p>
->>>>>>> main
       </div>
     </main>
   );
