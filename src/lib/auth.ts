@@ -5,20 +5,21 @@ import { ActivityType, Role } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logActivity, logError } from "@/lib/logging";
+import { authConfig } from "@/lib/auth.config";
 
 const loginSchema = z.object({
   firstName: z.string().min(2),
-  password: z.string().min(4)
+  password: z.string().min(4),
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
+  ...authConfig,
   providers: [
     Credentials({
       name: "Anmeldung",
       credentials: {
         firstName: { label: "Vorname", type: "text" },
-        password: { label: "Passwort", type: "password" }
+        password: { label: "Passwort", type: "password" },
       },
       authorize: async (credentials) => {
         const parsed = loginSchema.safeParse(credentials);
@@ -47,7 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const now = new Date();
         await prisma.user.update({
           where: { id: user.id },
-          data: { lastLoginAt: now, lastSeenAt: now, isActive: true }
+          data: { lastLoginAt: now, lastSeenAt: now, isActive: true },
         });
 
         await logActivity(user.id, ActivityType.LOGIN_SUCCESS, "Login erfolgreich");
@@ -55,10 +56,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return {
           id: user.id,
           name: user.firstName,
-          role: user.role
+          role: user.role,
         };
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
     jwt: async ({ token, user }) => {
@@ -74,9 +75,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as Role;
       }
       return session;
-    }
+    },
   },
-  pages: {
-    signIn: "/login"
-  }
 });
