@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { Heartbeat } from "@/components/heartbeat";
-import { MenschAergereDichNichtGame } from "./components/mensch-aergere-dich-nicht";
-import { ChessV1Game } from "./components/chess-v1";
+import { MenschAergereDichNichtGame } from "@/app/app/spiele/components/mensch-aergere-dich-nicht";
+import { ChessV1Game } from "@/app/app/spiele/components/chess-v1";
 
 type GameKey = "tictactoe" | "snake" | "minesweeper" | "ultimate" | "mensch" | "chess";
 
