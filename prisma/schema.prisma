@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ActivityType {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  REGISTER_SUCCESS
+  REGISTER_FAILED
+  HEARTBEAT
+  ADMIN_VIEW
+  USER_DEACTIVATED
+  INFO_POST_EDITED
+  INFO_POST_DELETED
+}
+
+model User {
+  id           String        @id @default(cuid())
+  firstName    String        @unique
+  passwordHash String
+  role         Role          @default(USER)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  lastLoginAt  DateTime?
+  lastSeenAt   DateTime?
+  isActive     Boolean       @default(true)
+  activities   ActivityLog[]
+  errors       ErrorLog[]
+  infoPosts    InfoPost[]
+  messages     Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+
+model InfoPost {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
+model ActivityLog {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      ActivityType
+  message   String
+  createdAt DateTime     @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model ErrorLog {
+  id        String    @id @default(cuid())
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  route     String?
+  message   String
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+}
