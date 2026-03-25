@@ -3,7 +3,9 @@
 import { useActionState } from "react";
 import { loginAction } from "./actions";
 
-const initialState = {};
+// Wir fügen 'error' mit einem leeren String (oder undefined) als Startwert hinzu.
+// So weiß TypeScript, dass die Eigenschaft existiert.
+const initialState = { error: "" };
 
 export function LoginForm() {
   const [state, action, pending] = useActionState(loginAction, initialState);
