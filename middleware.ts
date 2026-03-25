@@ -29,5 +29,6 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/", "/login", "/register", "/app/:path*", "/admin/:path*"]
+  // Dieser Matcher deckt ALLES ab, außer statische Dateien und die API
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
