@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
+import { ActivityType } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { logActivity, logError } from "@/lib/logging";
 import { prisma } from "@/lib/prisma";
-import { ActivityType } from "@prisma/client";
 
 export async function POST() {
   try {
@@ -15,10 +15,13 @@ export async function POST() {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { lastSeenAt: new Date(), isActive: true }
+      data: {
+        lastSeenAt: new Date(),
+        isActive: true
+      }
     });
 
-    await logActivity(userId, ActivityType.HEARTBEAT, "Nutzeraktivität aktualisiert");
+    await logActivity(userId, ActivityType.HEARTBEAT, "Heartbeat erfolgreich aktualisiert");
 
     return NextResponse.json({ ok: true });
   } catch (error) {

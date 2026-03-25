@@ -5,24 +5,24 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-type SendMessageResult = {
+const sendMessageSchema = z.object({
+  content: z.string().trim().min(1, "Bitte gib eine Nachricht ein.").max(500, "Die Nachricht darf maximal 500 Zeichen haben.")
+});
+
+export type SendMessageState = {
   ok: boolean;
   error?: string;
 };
 
-const messageSchema = z.object({
-  content: z.string().trim().min(1, "Bitte gib eine Nachricht ein.").max(500, "Nachricht ist zu lang (max. 500 Zeichen).")
-});
-
-export async function sendMessage(formData: FormData): Promise<SendMessageResult> {
+export async function sendMessage(_: SendMessageState, formData: FormData): Promise<SendMessageState> {
   const session = await auth();
   const userId = session?.user?.id;
 
   if (!userId) {
-    return { ok: false, error: "Nicht autorisiert." };
+    return { ok: false, error: "Du bist nicht eingeloggt." };
   }
 
-  const parsed = messageSchema.safeParse({
+  const parsed = sendMessageSchema.safeParse({
     content: String(formData.get("content") ?? "")
   });
 
@@ -38,5 +38,6 @@ export async function sendMessage(formData: FormData): Promise<SendMessageResult
   });
 
   revalidatePath("/app/chat");
+
   return { ok: true };
 }

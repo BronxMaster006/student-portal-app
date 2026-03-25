@@ -50,7 +50,6 @@ model Message {
   @@index([createdAt])
 }
 
-
 model InfoPost {
   id        String   @id @default(cuid())
   title     String

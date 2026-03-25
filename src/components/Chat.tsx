@@ -1,34 +1,48 @@
-import { prisma } from "@/lib/prisma";
-import { sendMessage } from "@/app/app/chat/actions";
+"use client";
 
-const ONLINE_WINDOW_IN_MS = 2 * 60 * 1000;
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { sendMessage, type SendMessageState } from "@/app/app/chat/actions";
 
-export async function Chat() {
-  const onlineSince = new Date(Date.now() - ONLINE_WINDOW_IN_MS);
+type ChatMessage = {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: {
+    firstName: string;
+  };
+};
 
-  const [latestMessages, onlineUsers] = await Promise.all([
-    prisma.message.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      include: { author: { select: { firstName: true } } }
-    }),
-    prisma.user.findMany({
-      where: {
-        lastSeenAt: { gte: onlineSince },
-        isActive: true
-      },
-      orderBy: { firstName: "asc" },
-      select: { id: true, firstName: true, lastSeenAt: true }
-    })
-  ]);
+type OnlineUser = {
+  id: string;
+  firstName: string;
+  lastSeenAt: string;
+};
 
-  const messages = [...latestMessages].reverse();
+type ChatProps = {
+  messages: ChatMessage[];
+  onlineUsers: OnlineUser[];
+};
+
+const initialState: SendMessageState = { ok: false };
+
+export function Chat({ messages, onlineUsers }: ChatProps) {
+  const router = useRouter();
+  const [state, formAction, isPending] = useActionState(sendMessage, initialState);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [router]);
 
   return (
     <section className="space-y-6 rounded-xl border border-slate-700 bg-card p-6">
-      <header className="space-y-2">
+      <header className="space-y-1">
         <h2 className="text-2xl font-semibold">Gruppenchat</h2>
-        <p className="text-sm text-slate-300">Alle eingeloggten Nutzer können hier Nachrichten schreiben.</p>
+        <p className="text-sm text-slate-300">Hier können alle eingeloggten Nutzer miteinander schreiben.</p>
       </header>
 
       <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
@@ -52,16 +66,16 @@ export async function Chat() {
         ) : (
           messages.map((message) => (
             <article key={message.id} className="rounded-lg border border-slate-700 bg-slate-900 p-3">
-              <p className="text-sm text-slate-100">{message.content}</p>
+              <p className="text-sm text-slate-100 whitespace-pre-wrap">{message.content}</p>
               <p className="mt-2 text-xs text-slate-400">
-                {message.author.firstName} • {message.createdAt.toLocaleString("de-DE")}
+                {message.author.firstName} • {new Date(message.createdAt).toLocaleString("de-DE")}
               </p>
             </article>
           ))
         )}
       </div>
 
-      <form action={sendMessage} className="space-y-3">
+      <form action={formAction} className="space-y-3">
         <label htmlFor="chat-content" className="block text-sm text-slate-300">
           Nachricht
         </label>
@@ -69,16 +83,21 @@ export async function Chat() {
           id="chat-content"
           name="content"
           rows={3}
-          required
           maxLength={500}
-          className="w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white outline-none ring-accent focus:ring-2"
+          required
           placeholder="Schreibe eine Nachricht an die Gruppe..."
+          className="w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-white outline-none ring-accent focus:ring-2"
         />
+
+        {state.error ? <p className="text-sm text-red-300">{state.error}</p> : null}
+        {state.ok ? <p className="text-sm text-emerald-300">Nachricht wurde gesendet.</p> : null}
+
         <button
           type="submit"
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+          disabled={isPending}
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
         >
-          Nachricht senden
+          {isPending ? "Sende..." : "Nachricht senden"}
         </button>
       </form>
     </section>
